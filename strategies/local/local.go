@@ -23,6 +23,11 @@ var ErrInvalidCredentials = errors.New("invalid credentials")
 // bad credentials, and (nil, err) for an unexpected internal error.
 type VerifyFunc func(username, password string) (user any, err error)
 
+// VerifyFuncReq is like VerifyFunc but also receives the request. It mirrors
+// passport-local's passReqToCallback option, allowing the verify function to
+// read request-scoped data (headers, cookies, context) during verification.
+type VerifyFuncReq func(r *http.Request, username, password string) (user any, err error)
+
 // Strategy authenticates requests with a username and password.
 type Strategy struct {
 	// UsernameField and PasswordField name the request fields holding the
@@ -30,7 +35,8 @@ type Strategy struct {
 	UsernameField string
 	PasswordField string
 
-	verify VerifyFunc
+	verify    VerifyFunc
+	verifyReq VerifyFuncReq
 }
 
 // New creates a local Strategy with the default field names.
@@ -39,6 +45,16 @@ func New(verify VerifyFunc) *Strategy {
 		UsernameField: "username",
 		PasswordField: "password",
 		verify:        verify,
+	}
+}
+
+// NewWithRequest creates a local Strategy whose verify receives the
+// *http.Request (passport-local's passReqToCallback: true).
+func NewWithRequest(verify VerifyFuncReq) *Strategy {
+	return &Strategy{
+		UsernameField: "username",
+		PasswordField: "password",
+		verifyReq:     verify,
 	}
 }
 
@@ -53,7 +69,7 @@ func (s *Strategy) Authenticate(c *passport.Context, r *http.Request) {
 		return
 	}
 
-	user, err := s.verify(username, password)
+	user, err := s.runVerify(r, username, password)
 	if err != nil {
 		if errors.Is(err, ErrInvalidCredentials) {
 			c.Fail("Invalid credentials", http.StatusUnauthorized)
@@ -67,6 +83,14 @@ func (s *Strategy) Authenticate(c *passport.Context, r *http.Request) {
 		return
 	}
 	c.Success(user)
+}
+
+// runVerify dispatches to whichever verify function was configured.
+func (s *Strategy) runVerify(r *http.Request, username, password string) (any, error) {
+	if s.verifyReq != nil {
+		return s.verifyReq(r, username, password)
+	}
+	return s.verify(username, password)
 }
 
 // credentials extracts the username and password from the request, supporting
