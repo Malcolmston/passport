@@ -103,7 +103,9 @@ p.Authenticate("bearer", passport.Options{Session: false})
 
 ## Bundled strategies
 
-Import the strategy you need from `strategies/` and register it with `p.Use`:
+`passport` ships **55 strategies** under `strategies/` — see
+[STRATEGIES.md](STRATEGIES.md) for the full catalog. Import the one you need and
+register it with `p.Use`. The core credential strategies:
 
 | Package | Strategy | Credentials |
 | ------- | -------- | ----------- |
@@ -112,6 +114,19 @@ Import the strategy you need from `strategies/` and register it with `p.Use`:
 | `strategies/bearer` | Bearer token (RFC 6750) | `Authorization: Bearer ...`, `access_token` param |
 | `strategies/jwt` | JSON Web Token (HS256) | signed `Authorization: Bearer <jwt>` |
 | `strategies/anonymous` | pass-through | none — makes auth optional |
+
+Plus **20 OAuth2 providers** on a shared `strategies/oauth2` base (github,
+google, facebook, gitlab, bitbucket, discord, slack, spotify, twitch, linkedin,
+microsoft, apple, reddit, dropbox, yandex, amazon, stripe, twitter, okta,
+auth0), **token/credential** strategies (apikey, hmac, totp, hotp, magic-link,
+remember-me, signed-token, client-cert, digest, ...), and **federated** ones
+(oauth1/twitter, openidconnect, jwt-bearer, cas, ldap, saml, ...).
+
+Some enterprise/federated strategies are intentionally **simplified** (e.g.
+`openidconnect`/`googleidtoken` verify HS256 rather than RS256/JWKS; `saml` does
+not validate signatures; `ldap` delegates the bind to a caller-supplied
+function). Each such package documents its limitations in its doc comment — see
+[COMPATIBILITY.md](COMPATIBILITY.md).
 
 ```go
 import (

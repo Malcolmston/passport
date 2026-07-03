@@ -47,6 +47,24 @@ Session cookies use HTTP-standard `Set-Cookie` (HttpOnly, Secure, SameSite),
 and the session id is regenerated on login to prevent fixation — matching
 `express-session`/Passport guidance.
 
+## Simplified strategies
+
+Some federated strategies implement a correct **core** but simplify parts that
+would require asymmetric crypto, network protocols, or session storage beyond
+the standard library. Each documents this in its package doc comment:
+
+| Strategy | Simplification |
+| -------- | -------------- |
+| `openidconnect`, `googleidtoken`, `jwtbearer` | verify id_token/assertion as **HS256** shared-secret rather than RS256/JWKS |
+| `saml` | parses `SAMLResponse` and extracts `NameID` but performs **no signature validation** — wiring/testing only, not production-secure |
+| `ldap` | no network bind; delegates to a caller-supplied `Bind(dn, password)` integration point |
+| `cas` | CAS 2.0 `serviceValidate` flow; no proxy tickets |
+| `oauth1` | signing/flow complete; access-token exchange uses an empty token secret (request-token secret needs session storage) |
+
+The OAuth2 providers, JWT (HS256), TOTP/HOTP (RFC 6238/4226), HMAC, and HTTP
+Basic/Bearer strategies are full implementations verified with tests (and, for
+JWT, cross-verified against Node).
+
 ## Known gaps
 
 Passport.js has 500+ community strategies; this library ships the most common
