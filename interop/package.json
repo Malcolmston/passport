@@ -1,0 +1,7 @@
+{
+  "name": "passport-interop",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Cross-verify passport-go JWT (HS256) with Node jsonwebtoken",
+  "dependencies": { "jsonwebtoken": "^9.0.0" }
+}

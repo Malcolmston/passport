@@ -193,6 +193,14 @@ app.Post("/login", passportMW(p.Authenticate("local")), func(req *express.Reques
 })
 ```
 
+## Compatibility
+
+A Go re-implementation modeled on Passport.js. Its JWT strategy is
+**verified interoperable** with Node's `jsonwebtoken` (both directions), and all
+strategies use standards-based wire formats. See
+[COMPATIBILITY.md](COMPATIBILITY.md) for the parity tables, verified interop, and
+known gaps.
+
 ## License
 
 [MIT](LICENSE)
