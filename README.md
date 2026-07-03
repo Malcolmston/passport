@@ -101,6 +101,50 @@ p.Authenticate("bearer", passport.Options{Session: false})
 | `FailureStatus` | override the failure status (default 401). |
 | `FailureMessage` | write the strategy's challenge text as the failure body. |
 
+## Bundled strategies
+
+Import the strategy you need from `strategies/` and register it with `p.Use`:
+
+| Package | Strategy | Credentials |
+| ------- | -------- | ----------- |
+| `strategies/local` | username / password | form or JSON body |
+| `strategies/basic` | HTTP Basic (RFC 7617) | `Authorization: Basic ...` |
+| `strategies/bearer` | Bearer token (RFC 6750) | `Authorization: Bearer ...`, `access_token` param |
+| `strategies/jwt` | JSON Web Token (HS256) | signed `Authorization: Bearer <jwt>` |
+| `strategies/anonymous` | pass-through | none — makes auth optional |
+
+```go
+import (
+	"github.com/malcolmston/passport/strategies/bearer"
+	"github.com/malcolmston/passport/strategies/basic"
+	"github.com/malcolmston/passport/strategies/jwt"
+	"github.com/malcolmston/passport/strategies/anonymous"
+)
+
+// Opaque API tokens.
+p.Use(bearer.New(func(token string) (any, error) {
+	return lookupByToken(token) // (nil, bearer.ErrInvalidToken) to reject
+}))
+
+// HTTP Basic.
+p.Use(basic.New(func(user, pass string) (any, error) {
+	return authenticate(user, pass)
+}))
+
+// Stateless JWT (HS256). jwt.Sign is provided for issuing tokens.
+p.Use(jwt.New([]byte(secret), func(c jwt.Claims) (any, error) {
+	return lookupByID(c.Subject())
+}))
+
+// Optional auth: try a real strategy, then fall back to anonymous.
+p.Use(anonymous.New())
+```
+
+The `jwt` strategy verifies the signature and the `exp` / `nbf` time claims
+using only the standard library (no third-party dependencies), and exposes
+`jwt.Sign(secret, claims)` for token issuance and `strategy.Parse(token)` for
+manual verification.
+
 ## Writing a strategy
 
 A strategy implements two methods and reports its result on the `*Context`:
