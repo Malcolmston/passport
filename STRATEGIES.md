@@ -1,64 +1,111 @@
 # Strategy catalog
 
-`passport` ships **56 authentication strategies** under `strategies/`.
-Each is an independent subpackage implementing `passport.Strategy`, with a `New(...)`
-constructor. Standard library only.
+`passport` ships **103 authentication strategies** under `strategies/`, each an
+independent subpackage implementing `passport.Strategy`. The OAuth2 providers share
+the `strategies/oauth2` base. Standard library only.
 
-| Strategy | Import | Description |
-| -------- | ------ | ----------- |
-| `amazon` | `github.com/malcolmston/passport/strategies/amazon` | provides a passport OAuth2 strategy preset for the Amazon |
-| `anonymous` | `github.com/malcolmston/passport/strategies/anonymous` | implements a pass-through strategy, a Go port of |
-| `apikey` | `github.com/malcolmston/passport/strategies/apikey` | implements API-key authentication. The key is read from a |
-| `apitoken` | `github.com/malcolmston/passport/strategies/apitoken` | authenticates requests bearing an opaque API token. The |
-| `apple` | `github.com/malcolmston/passport/strategies/apple` | provides a passport OAuth2 strategy preset for the Apple |
-| `auth0` | `github.com/malcolmston/passport/strategies/auth0` | provides a passport OAuth2 strategy preset for Auth0. Auth0 is |
-| `basic` | `github.com/malcolmston/passport/strategies/basic` | implements HTTP Basic authentication (RFC 7617), a Go port of |
-| `basicverify` | `github.com/malcolmston/passport/strategies/basicverify` | implements HTTP Basic authentication (RFC 7617) with a |
-| `bearer` | `github.com/malcolmston/passport/strategies/bearer` | implements HTTP Bearer token authentication (RFC 6750), a Go |
-| `bearertoken` | `github.com/malcolmston/passport/strategies/bearertoken` | implements opaque bearer-token authentication via token |
-| `bitbucket` | `github.com/malcolmston/passport/strategies/bitbucket` | provides a passport OAuth2 strategy preset for the Bitbucket |
-| `cas` | `github.com/malcolmston/passport/strategies/cas` | implements a client for the CAS (Central Authentication Service) |
-| `clientcert` | `github.com/malcolmston/passport/strategies/clientcert` | implements TLS client-certificate (mutual TLS) |
-| `clientcredentials` | `github.com/malcolmston/passport/strategies/clientcredentials` | implements OAuth2 client-credentials style |
-| `cookietoken` | `github.com/malcolmston/passport/strategies/cookietoken` | authenticates requests by reading a token from a named |
-| `custom` | `github.com/malcolmston/passport/strategies/custom` | provides a generic adapter for defining ad-hoc authentication |
-| `digest` | `github.com/malcolmston/passport/strategies/digest` | implements a SIMPLIFIED form of HTTP Digest access |
-| `discord` | `github.com/malcolmston/passport/strategies/discord` | provides a passport OAuth2 strategy preset for the Discord |
-| `dropbox` | `github.com/malcolmston/passport/strategies/dropbox` | provides a passport OAuth2 strategy preset for the Dropbox |
-| `facebook` | `github.com/malcolmston/passport/strategies/facebook` | provides a passport OAuth2 strategy preset for the Facebook |
-| `github` | `github.com/malcolmston/passport/strategies/github` | provides a passport OAuth2 strategy preset for the Github |
-| `gitlab` | `github.com/malcolmston/passport/strategies/gitlab` | provides a passport OAuth2 strategy preset for the Gitlab |
-| `google` | `github.com/malcolmston/passport/strategies/google` | provides a passport OAuth2 strategy preset for the Google |
-| `googleidtoken` | `github.com/malcolmston/passport/strategies/googleidtoken` | verifies a Google-style OpenID Connect id_token |
-| `headertoken` | `github.com/malcolmston/passport/strategies/headertoken` | authenticates requests by reading a token from an |
-| `hmac` | `github.com/malcolmston/passport/strategies/hmac` | authenticates requests by verifying an HMAC-SHA256 signature of |
-| `hotp` | `github.com/malcolmston/passport/strategies/hotp` | implements HMAC-based One-Time Password (HOTP) authentication as |
-| `jwt` | `github.com/malcolmston/passport/strategies/jwt` | implements a JSON Web Token authentication strategy, a Go port of |
-| `jwtbearer` | `github.com/malcolmston/passport/strategies/jwtbearer` | implements the JWT Bearer authorization grant of RFC 7523 |
-| `ldap` | `github.com/malcolmston/passport/strategies/ldap` | implements a username/password strategy whose credential check |
-| `linkedin` | `github.com/malcolmston/passport/strategies/linkedin` | provides a passport OAuth2 strategy preset for the Linkedin |
-| `local` | `github.com/malcolmston/passport/strategies/local` | implements the username-and-password authentication strategy, |
-| `magiclink` | `github.com/malcolmston/passport/strategies/magiclink` | implements passwordless "magic link" authentication. A |
-| `microsoft` | `github.com/malcolmston/passport/strategies/microsoft` | provides a passport OAuth2 strategy preset for the Microsoft |
-| `oauth1` | `github.com/malcolmston/passport/strategies/oauth1` | implements the core of an OAuth 1.0a (RFC 5849) authentication |
-| `oauth1twitter` | `github.com/malcolmston/passport/strategies/oauth1twitter` | is a thin wrapper over strategies/oauth1 that presets |
-| `oauth2` | `github.com/malcolmston/passport/strategies/oauth2` | implements a generic, testable OAuth2 authorization-code |
-| `okta` | `github.com/malcolmston/passport/strategies/okta` | provides a passport OAuth2 strategy preset for Okta. Okta is |
-| `openidconnect` | `github.com/malcolmston/passport/strategies/openidconnect` | implements an OpenID Connect (OIDC) authentication |
-| `querytoken` | `github.com/malcolmston/passport/strategies/querytoken` | authenticates requests by reading a token from a query |
-| `reddit` | `github.com/malcolmston/passport/strategies/reddit` | provides a passport OAuth2 strategy preset for the Reddit |
-| `refreshjwt` | `github.com/malcolmston/passport/strategies/refreshjwt` | authenticates a request using a refresh-token JWT carried |
-| `refreshtoken` | `github.com/malcolmston/passport/strategies/refreshtoken` | authenticates OAuth2-style refresh-token requests. The |
-| `remembercookie` | `github.com/malcolmston/passport/strategies/remembercookie` | implements persistent "remember me" login using the |
-| `saml` | `github.com/malcolmston/passport/strategies/saml` | implements a minimal Service Provider handler for a SAML 2.0 |
-| `sessionjwt` | `github.com/malcolmston/passport/strategies/sessionjwt` | implements stateless sessions backed by a signed JWT stored |
-| `sessiontoken` | `github.com/malcolmston/passport/strategies/sessiontoken` | authenticates requests by reading an opaque session |
-| `signedtoken` | `github.com/malcolmston/passport/strategies/signedtoken` | implements self-contained HMAC-signed token |
-| `slack` | `github.com/malcolmston/passport/strategies/slack` | provides a passport OAuth2 strategy preset for the Slack |
-| `spotify` | `github.com/malcolmston/passport/strategies/spotify` | provides a passport OAuth2 strategy preset for the Spotify |
-| `stripe` | `github.com/malcolmston/passport/strategies/stripe` | provides a passport OAuth2 strategy preset for the Stripe |
-| `totp` | `github.com/malcolmston/passport/strategies/totp` | implements Time-based One-Time Password (TOTP) authentication as |
-| `twitch` | `github.com/malcolmston/passport/strategies/twitch` | provides a passport OAuth2 strategy preset for the Twitch |
-| `twitter` | `github.com/malcolmston/passport/strategies/twitter` | provides a passport OAuth2 strategy preset for the Twitter |
-| `webauthn` | `github.com/malcolmston/passport/strategies/webauthn` | implements WebAuthn (passkey / FIDO2) authentication for |
-| `yandex` | `github.com/malcolmston/passport/strategies/yandex` | provides a passport OAuth2 strategy preset for the Yandex |
+| Strategy | Import |
+| -------- | ------ |
+| `amazon` | `github.com/malcolmston/passport/strategies/amazon` |
+| `anonymous` | `github.com/malcolmston/passport/strategies/anonymous` |
+| `apikey` | `github.com/malcolmston/passport/strategies/apikey` |
+| `apitoken` | `github.com/malcolmston/passport/strategies/apitoken` |
+| `apple` | `github.com/malcolmston/passport/strategies/apple` |
+| `asana` | `github.com/malcolmston/passport/strategies/asana` |
+| `atlassian` | `github.com/malcolmston/passport/strategies/atlassian` |
+| `auth0` | `github.com/malcolmston/passport/strategies/auth0` |
+| `azuread` | `github.com/malcolmston/passport/strategies/azuread` |
+| `basic` | `github.com/malcolmston/passport/strategies/basic` |
+| `basicverify` | `github.com/malcolmston/passport/strategies/basicverify` |
+| `bearer` | `github.com/malcolmston/passport/strategies/bearer` |
+| `bearertoken` | `github.com/malcolmston/passport/strategies/bearertoken` |
+| `bitbucket` | `github.com/malcolmston/passport/strategies/bitbucket` |
+| `box` | `github.com/malcolmston/passport/strategies/box` |
+| `cas` | `github.com/malcolmston/passport/strategies/cas` |
+| `clickup` | `github.com/malcolmston/passport/strategies/clickup` |
+| `clientcert` | `github.com/malcolmston/passport/strategies/clientcert` |
+| `clientcredentials` | `github.com/malcolmston/passport/strategies/clientcredentials` |
+| `cognito` | `github.com/malcolmston/passport/strategies/cognito` |
+| `coinbase` | `github.com/malcolmston/passport/strategies/coinbase` |
+| `cookietoken` | `github.com/malcolmston/passport/strategies/cookietoken` |
+| `custom` | `github.com/malcolmston/passport/strategies/custom` |
+| `deezer` | `github.com/malcolmston/passport/strategies/deezer` |
+| `digest` | `github.com/malcolmston/passport/strategies/digest` |
+| `digitalocean` | `github.com/malcolmston/passport/strategies/digitalocean` |
+| `discord` | `github.com/malcolmston/passport/strategies/discord` |
+| `docusign` | `github.com/malcolmston/passport/strategies/docusign` |
+| `dropbox` | `github.com/malcolmston/passport/strategies/dropbox` |
+| `etsy` | `github.com/malcolmston/passport/strategies/etsy` |
+| `eventbrite` | `github.com/malcolmston/passport/strategies/eventbrite` |
+| `facebook` | `github.com/malcolmston/passport/strategies/facebook` |
+| `figma` | `github.com/malcolmston/passport/strategies/figma` |
+| `fitbit` | `github.com/malcolmston/passport/strategies/fitbit` |
+| `fortytwo` | `github.com/malcolmston/passport/strategies/fortytwo` |
+| `foursquare` | `github.com/malcolmston/passport/strategies/foursquare` |
+| `gitea` | `github.com/malcolmston/passport/strategies/gitea` |
+| `github` | `github.com/malcolmston/passport/strategies/github` |
+| `gitlab` | `github.com/malcolmston/passport/strategies/gitlab` |
+| `google` | `github.com/malcolmston/passport/strategies/google` |
+| `googleidtoken` | `github.com/malcolmston/passport/strategies/googleidtoken` |
+| `gumroad` | `github.com/malcolmston/passport/strategies/gumroad` |
+| `headertoken` | `github.com/malcolmston/passport/strategies/headertoken` |
+| `heroku` | `github.com/malcolmston/passport/strategies/heroku` |
+| `hmac` | `github.com/malcolmston/passport/strategies/hmac` |
+| `hotp` | `github.com/malcolmston/passport/strategies/hotp` |
+| `hubspot` | `github.com/malcolmston/passport/strategies/hubspot` |
+| `imgur` | `github.com/malcolmston/passport/strategies/imgur` |
+| `instagram` | `github.com/malcolmston/passport/strategies/instagram` |
+| `jwt` | `github.com/malcolmston/passport/strategies/jwt` |
+| `jwtbearer` | `github.com/malcolmston/passport/strategies/jwtbearer` |
+| `kakao` | `github.com/malcolmston/passport/strategies/kakao` |
+| `keycloak` | `github.com/malcolmston/passport/strategies/keycloak` |
+| `ldap` | `github.com/malcolmston/passport/strategies/ldap` |
+| `line` | `github.com/malcolmston/passport/strategies/line` |
+| `linkedin` | `github.com/malcolmston/passport/strategies/linkedin` |
+| `local` | `github.com/malcolmston/passport/strategies/local` |
+| `magiclink` | `github.com/malcolmston/passport/strategies/magiclink` |
+| `mailchimp` | `github.com/malcolmston/passport/strategies/mailchimp` |
+| `mastodon` | `github.com/malcolmston/passport/strategies/mastodon` |
+| `meetup` | `github.com/malcolmston/passport/strategies/meetup` |
+| `microsoft` | `github.com/malcolmston/passport/strategies/microsoft` |
+| `mixcloud` | `github.com/malcolmston/passport/strategies/mixcloud` |
+| `monday` | `github.com/malcolmston/passport/strategies/monday` |
+| `naver` | `github.com/malcolmston/passport/strategies/naver` |
+| `notion` | `github.com/malcolmston/passport/strategies/notion` |
+| `oauth1` | `github.com/malcolmston/passport/strategies/oauth1` |
+| `oauth1twitter` | `github.com/malcolmston/passport/strategies/oauth1twitter` |
+| `oauth2` | `github.com/malcolmston/passport/strategies/oauth2` |
+| `okta` | `github.com/malcolmston/passport/strategies/okta` |
+| `onelogin` | `github.com/malcolmston/passport/strategies/onelogin` |
+| `openidconnect` | `github.com/malcolmston/passport/strategies/openidconnect` |
+| `patreon` | `github.com/malcolmston/passport/strategies/patreon` |
+| `paypal` | `github.com/malcolmston/passport/strategies/paypal` |
+| `pinterest` | `github.com/malcolmston/passport/strategies/pinterest` |
+| `querytoken` | `github.com/malcolmston/passport/strategies/querytoken` |
+| `reddit` | `github.com/malcolmston/passport/strategies/reddit` |
+| `refreshjwt` | `github.com/malcolmston/passport/strategies/refreshjwt` |
+| `refreshtoken` | `github.com/malcolmston/passport/strategies/refreshtoken` |
+| `remembercookie` | `github.com/malcolmston/passport/strategies/remembercookie` |
+| `salesforce` | `github.com/malcolmston/passport/strategies/salesforce` |
+| `saml` | `github.com/malcolmston/passport/strategies/saml` |
+| `sessionjwt` | `github.com/malcolmston/passport/strategies/sessionjwt` |
+| `sessiontoken` | `github.com/malcolmston/passport/strategies/sessiontoken` |
+| `shopify` | `github.com/malcolmston/passport/strategies/shopify` |
+| `signedtoken` | `github.com/malcolmston/passport/strategies/signedtoken` |
+| `slack` | `github.com/malcolmston/passport/strategies/slack` |
+| `spotify` | `github.com/malcolmston/passport/strategies/spotify` |
+| `square` | `github.com/malcolmston/passport/strategies/square` |
+| `stackexchange` | `github.com/malcolmston/passport/strategies/stackexchange` |
+| `strava` | `github.com/malcolmston/passport/strategies/strava` |
+| `stripe` | `github.com/malcolmston/passport/strategies/stripe` |
+| `todoist` | `github.com/malcolmston/passport/strategies/todoist` |
+| `totp` | `github.com/malcolmston/passport/strategies/totp` |
+| `twitch` | `github.com/malcolmston/passport/strategies/twitch` |
+| `twitter` | `github.com/malcolmston/passport/strategies/twitter` |
+| `vk` | `github.com/malcolmston/passport/strategies/vk` |
+| `webauthn` | `github.com/malcolmston/passport/strategies/webauthn` |
+| `wordpresscom` | `github.com/malcolmston/passport/strategies/wordpresscom` |
+| `workos` | `github.com/malcolmston/passport/strategies/workos` |
+| `yandex` | `github.com/malcolmston/passport/strategies/yandex` |
+| `zendesk` | `github.com/malcolmston/passport/strategies/zendesk` |
+| `zoom` | `github.com/malcolmston/passport/strategies/zoom` |
