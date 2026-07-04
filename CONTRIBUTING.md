@@ -18,6 +18,10 @@ especially welcome.
    CI enforces all of these on Go 1.23 and 1.24.
 4. Preserve the **Node-mirroring API** (names and semantics are chosen to match
    the original library on purpose).
+5. Adding a strategy under `strategies/<name>/` requires the package to expose a
+   Strategy (declare `Name` + `Authenticate`, or a preset returning a base
+   strategy's `*Strategy`) and to ship at least one test — enforced statically by
+   `TestStrategyPackagesAreCompliant`.
 
 ## Reporting issues
 Open an issue with a minimal reproduction and the Go version you're using.
