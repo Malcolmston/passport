@@ -68,8 +68,20 @@ func New(name string, cfg Config, verify VerifyFunc) *Strategy {
 	return &Strategy{name: name, cfg: cfg, verify: verify}
 }
 
+// Compile-time proof that the shared base implements the root package's
+// optional OAuth2Provider capability interface. Every concrete provider
+// package (github, google, gitlab, discord, facebook, ...) returns a
+// *Strategy, so they all satisfy it too.
+var _ passport.OAuth2Provider = (*Strategy)(nil)
+
 // Name returns the strategy name.
 func (s *Strategy) Name() string { return s.name }
+
+// AuthURL returns the provider's configured authorization endpoint.
+func (s *Strategy) AuthURL() string { return s.cfg.AuthURL }
+
+// TokenURL returns the provider's configured token endpoint.
+func (s *Strategy) TokenURL() string { return s.cfg.TokenURL }
 
 func (s *Strategy) httpClient() *http.Client {
 	if s.cfg.HTTPClient != nil {
