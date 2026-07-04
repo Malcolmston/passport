@@ -160,6 +160,33 @@ using only the standard library (no third-party dependencies), and exposes
 `jwt.Sign(secret, claims)` for token issuance and `strategy.Parse(token)` for
 manual verification.
 
+## WebAuthn / passkeys
+
+`strategies/webauthn` implements the WebAuthn (FIDO2 / passkey) ceremonies. The
+authentication ceremony is fully verified — challenge, origin, RP ID hash, user
+presence, the assertion signature (ES256 / RS256), and the signature counter —
+using a built-in CBOR/COSE parser (no third-party dependencies).
+
+```go
+import "github.com/malcolmston/passport/strategies/webauthn"
+
+cfg := webauthn.Config{RPID: "example.com", RPOrigin: "https://example.com", RPName: "Example"}
+
+// Registration: serve options to the browser, then persist the credential.
+challenge, options, _ := cfg.BeginRegistration(userID, "ada", "Ada Lovelace")
+// ... store `challenge` in the session, send `options` as JSON ...
+cred, _ := cfg.FinishRegistration(attestationObject, clientDataJSON, challenge)
+// ... save cred (ID, PublicKey, SignCount) for the user ...
+
+// Authentication: a passport strategy verifying the assertion.
+p.Use(webauthn.New(cfg, myCredentialStore, func(r *http.Request) []byte {
+	return sessionChallenge(r) // the challenge from BeginAuthentication
+}))
+```
+
+Attestation-*statement* verification (proving the authenticator model) is
+treated as `none` — the common default for passkeys — and documented as such.
+
 ## Writing a strategy
 
 A strategy implements two methods and reports its result on the `*Context`:

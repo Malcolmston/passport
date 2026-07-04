@@ -1,6 +1,6 @@
 # Strategy catalog
 
-`passport` ships **55 authentication strategies** under `strategies/`.
+`passport` ships **56 authentication strategies** under `strategies/`.
 Each is an independent subpackage implementing `passport.Strategy`, with a `New(...)`
 constructor. Standard library only.
 
@@ -60,4 +60,5 @@ constructor. Standard library only.
 | `totp` | `github.com/malcolmston/passport/strategies/totp` | implements Time-based One-Time Password (TOTP) authentication as |
 | `twitch` | `github.com/malcolmston/passport/strategies/twitch` | provides a passport OAuth2 strategy preset for the Twitch |
 | `twitter` | `github.com/malcolmston/passport/strategies/twitter` | provides a passport OAuth2 strategy preset for the Twitter |
+| `webauthn` | `github.com/malcolmston/passport/strategies/webauthn` | implements WebAuthn (passkey / FIDO2) authentication for |
 | `yandex` | `github.com/malcolmston/passport/strategies/yandex` | provides a passport OAuth2 strategy preset for the Yandex |
