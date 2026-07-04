@@ -7,11 +7,16 @@
 // endpoint, verifies the returned id_token, and reports the token's claims as
 // the authenticated user.
 //
-// SIMPLIFIED: real OIDC id_tokens are signed with the provider's RS256 key,
-// discovered via a JWKS endpoint. This implementation verifies HS256 id_tokens
-// using a shared secret (JWKSecret) via strategies/jwt, which keeps the flow
-// testable with only the standard library. The exchange and claim handling are
-// otherwise faithful.
+// id_token verification supports both modes real providers use:
+//
+//   - RS256/ES256 via a JWKS endpoint (Google, Auth0, Okta, Azure AD, ...):
+//     set Config.JWKSURL (and optionally Config.Algorithms). Keys are fetched
+//     from the endpoint and cached, refreshing on key rotation. This is the
+//     production path.
+//   - HS256 with a shared secret (Config.JWKSecret) via strategies/jwt: handy
+//     for tests and symmetric-key setups.
+//
+// When JWKSURL is set it takes precedence; otherwise the HS256 path is used.
 package openidconnect
 
 import (
@@ -25,6 +30,7 @@ import (
 	"strings"
 
 	"github.com/malcolmston/passport"
+	"github.com/malcolmston/passport/strategies/jwks"
 	"github.com/malcolmston/passport/strategies/jwt"
 )
 
@@ -38,8 +44,17 @@ type Config struct {
 	AuthURL  string
 	TokenURL string
 
-	// JWKSecret is the HS256 key used to verify the id_token in this
-	// simplified implementation. See the package doc comment.
+	// JWKSURL is the provider's JWKS endpoint. When set, id_tokens are verified
+	// with the asymmetric keys (RS256/ES256/PS256) published there, which is
+	// how real OIDC providers sign them. Takes precedence over JWKSecret.
+	JWKSURL string
+
+	// Algorithms restricts accepted id_token "alg" values when using JWKSURL
+	// (e.g. {"RS256"}). Empty accepts any supported asymmetric algorithm.
+	Algorithms []string
+
+	// JWKSecret is the HS256 key used to verify the id_token when JWKSURL is
+	// not configured. Handy for tests and symmetric-key deployments.
 	JWKSecret []byte
 
 	// Scopes are requested in addition to "openid" (always included).
@@ -59,12 +74,23 @@ type VerifyFunc func(claims jwt.Claims) (user any, err error)
 type Strategy struct {
 	cfg    Config
 	verify VerifyFunc
+
+	// jwksVerifier is set when cfg.JWKSURL is configured; it caches the
+	// provider's signing keys across requests.
+	jwksVerifier *jwks.Strategy
 }
 
 // New creates an OIDC Strategy. verify may be nil, in which case the id_token
 // claims are used directly as the authenticated user.
 func New(cfg Config, verify VerifyFunc) *Strategy {
-	return &Strategy{cfg: cfg, verify: verify}
+	s := &Strategy{cfg: cfg, verify: verify}
+	if cfg.JWKSURL != "" {
+		s.jwksVerifier = jwks.New(jwks.Options{
+			JWKSURL:    cfg.JWKSURL,
+			Algorithms: cfg.Algorithms,
+		}, nil)
+	}
+	return s
 }
 
 // Name returns "openidconnect".
@@ -150,6 +176,21 @@ func (s *Strategy) Exchange(ctx context.Context, code string) (*tokenResponse, e
 	return &tr, nil
 }
 
+// verifyIDToken validates the id_token signature and time claims, returning its
+// claims. It uses the JWKS endpoint (RS256/ES256) when configured, otherwise
+// the HS256 shared secret.
+func (s *Strategy) verifyIDToken(idToken string) (jwt.Claims, error) {
+	if s.jwksVerifier != nil {
+		claims, err := s.jwksVerifier.VerifyToken(idToken)
+		if err != nil {
+			return nil, err
+		}
+		return jwt.Claims(claims), nil
+	}
+	parser := jwt.New(s.cfg.JWKSecret, nil)
+	return parser.Parse(idToken)
+}
+
 // Authenticate implements passport.Strategy.
 func (s *Strategy) Authenticate(c *passport.Context, r *http.Request) {
 	q := r.URL.Query()
@@ -165,9 +206,8 @@ func (s *Strategy) Authenticate(c *passport.Context, r *http.Request) {
 		return
 	}
 
-	// Verify the id_token via the jwt package (HS256, simplified).
-	parser := jwt.New(s.cfg.JWKSecret, nil)
-	claims, err := parser.Parse(tr.IDToken)
+	// Verify the id_token: RS256/ES256 via JWKS when configured, else HS256.
+	claims, err := s.verifyIDToken(tr.IDToken)
 	if err != nil {
 		c.Fail("invalid_token", http.StatusUnauthorized)
 		return
