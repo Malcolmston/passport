@@ -1,0 +1,12 @@
+title = "passport gitleaks config"
+
+# Use gitleaks' full default ruleset...
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Documentation and example code contains placeholder credentials (fake client IDs/secrets, sample tokens, curl Authorization snippets) — not real secrets."
+paths = [
+  '''strategies/.*/example_test.go''',
+  '''examples/.*''',
+]
