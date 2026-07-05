@@ -1,5 +1,12 @@
 # passport
 
+[![CI](https://github.com/Malcolmston/passport/actions/workflows/ci.yml/badge.svg)](https://github.com/Malcolmston/passport/actions/workflows/ci.yml)
+[![Go Reference](https://pkg.go.dev/badge/github.com/malcolmston/passport.svg)](https://pkg.go.dev/github.com/malcolmston/passport)
+[![Go Report Card](https://goreportcard.com/badge/github.com/malcolmston/passport)](https://goreportcard.com/report/github.com/malcolmston/passport)
+[![Release](https://img.shields.io/github/v/release/Malcolmston/passport?sort=semver)](https://github.com/Malcolmston/passport/releases)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Docs](https://img.shields.io/badge/docs-pages-2f9bff)](https://malcolmston.github.io/passport/)
+
 **Node's Passport, for Go.**
 
 `passport` is a Go port of [Passport.js](https://www.passportjs.org/) — simple,
