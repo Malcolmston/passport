@@ -2,23 +2,60 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { DocsView } from '../../../src/components/DocsView';
 import { LIB } from '../../../src/data';
+import type { DocIndex } from 'go-ui';
+
+// A minimal DocIndex the stubbed fetch returns for DocsApp's doc.json request.
+const DOC_INDEX: DocIndex = {
+  module: 'github.com/malcolmston/passport',
+  packages: [
+    {
+      importPath: 'github.com/malcolmston/passport',
+      name: 'passport',
+      synopsis: 'Package passport is a strategy-based auth middleware.',
+      doc: 'Package passport is a strategy-based auth middleware.',
+      consts: [],
+      vars: [],
+      types: [
+        {
+          name: 'Passport',
+          signature: 'type Passport struct{}',
+          doc: 'Passport authenticates requests.',
+          consts: [],
+          vars: [],
+          funcs: [],
+          methods: [],
+        },
+      ],
+      funcs: [{ name: 'New', signature: 'func New() *Passport', doc: 'New creates a Passport.' }],
+    },
+  ],
+};
 
 describe('DocsView', () => {
   beforeEach(() => {
-    // VersionBadge fetches on mount; keep it pending.
-    global.fetch = vi.fn().mockReturnValue(new Promise(() => {}));
+    // DocsApp fetches doc.json; return the small index. VersionBadge also fetches
+    // (releases) — leave any non-doc request pending so it never resolves.
+    global.fetch = vi.fn((input: RequestInfo | URL) => {
+      if (String(input).includes('doc.json')) {
+        return Promise.resolve({ ok: true, json: () => Promise.resolve(DOC_INDEX) } as Response);
+      }
+      return new Promise<Response>(() => {});
+    }) as unknown as typeof fetch;
   });
 
-  it('renders the docs heading, the API reference link and the usage snippets', () => {
+  it('renders the inline React API reference from the fetched doc.json', async () => {
     const { container } = render(<DocsView lib={LIB} />);
     expect(container.querySelector('#view-docs')).not.toBeNull();
-    expect(screen.getByRole('heading', { level: 2, name: 'Documentation' })).toBeInTheDocument();
-    // Links to the generated API reference served alongside the site at ./api/.
-    const apiLink = screen.getByRole('link', { name: /Open the API reference/ });
-    expect(apiLink).toHaveAttribute('href', './api/');
-    expect(apiLink).toHaveAttribute('target', '_blank');
-    expect(screen.getByRole('heading', { name: 'Install' })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Usage' })).toBeInTheDocument();
-    expect(screen.getByText(new RegExp(`go get ${LIB.pkg}`))).toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { level: 2, name: /API documentation/ }),
+    ).toBeInTheDocument();
+
+    // DocsApp fetches asynchronously, then renders the package view + symbols.
+    expect(await screen.findByRole('heading', { name: /package passport/ })).toBeInTheDocument();
+    expect(container.querySelector('#sym-New'), 'func New symbol card').not.toBeNull();
+    expect(container.querySelector('#sym-Passport'), 'type Passport symbol card').not.toBeNull();
+
+    // The secondary link to the raw generated static HTML remains.
+    expect(screen.getByRole('link', { name: /Raw generated HTML/ })).toHaveAttribute('href', './api/');
   });
 });
