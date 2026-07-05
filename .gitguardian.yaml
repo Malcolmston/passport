@@ -1,0 +1,9 @@
+version: 2
+
+# Strategy examples and runnable demos contain placeholder credentials
+# (sample client IDs/secrets, demo tokens, curl Authorization snippets) — not
+# real secrets. Exclude them from secret scanning to avoid false positives.
+secret:
+  ignored-paths:
+    - "strategies/**/example_test.go"
+    - "examples/**"
