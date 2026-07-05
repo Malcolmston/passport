@@ -1,7 +1,49 @@
-// Package oauth2 implements a generic, testable OAuth2 authorization-code
-// strategy for the passport port. It is the shared engine behind the concrete
-// provider packages (github, google, ...), each of which is a thin wrapper that
-// presets the provider's endpoints and scopes.
+// Package oauth2 implements a generic, standard-library-only OAuth 2.0
+// authorization-code strategy for the passport port. It is the shared engine
+// behind every concrete OAuth2 provider package in this module (github, google,
+// kakao, line, microsoft, notion, and the rest): each of those is a thin
+// wrapper that presets this package's endpoints and default scopes, so the
+// redirect, token-exchange, and userinfo logic lives here in exactly one place.
+// It ports passport-oauth2, the Node base strategy that the passport-* provider
+// strategies extend, and is therefore the core abstraction other providers
+// build on rather than a standalone provider.
+//
+// Reach for this package directly when you need to talk to an OAuth2 provider
+// that has no dedicated wrapper: supply the provider's authorization, token,
+// and (optionally) userinfo URLs in a Config together with your client
+// credentials and requested Scopes, and you get a ready passport.Strategy. When
+// a wrapper does exist, prefer it — it fills in the URLs and sensible default
+// scopes for you and still returns a *Strategy from this package, so everything
+// documented here applies unchanged.
+//
+// The flow is the standard three-step authorization-code grant. A request that
+// arrives without a "code" query parameter is treated as the start of login:
+// Authenticate builds the provider authorization URL with AuthCodeURL and
+// redirects the browser to it. The provider authenticates the user and redirects
+// back to RedirectURL with a "code" (and the "state" that was passed through).
+// On that second request Exchange POSTs the code to TokenURL to obtain an access
+// token, FetchUserInfo GETs UserInfoURL with that token, and the decoded profile
+// is handed to your VerifyFunc.
+//
+// Several semantics are worth knowing. Scopes are space-joined into the
+// authorization request per the OAuth2 spec. The "state" parameter is passed
+// through opaquely for CSRF protection but is neither generated nor validated
+// here — the surrounding passport middleware owns that — and this package does
+// not implement PKCE. UserInfoURL may be left empty for providers that expose no
+// userinfo endpoint (Apple, Stripe), in which case FetchUserInfo returns an
+// empty map and the Profile carries only the access token; extractID otherwise
+// makes a best-effort attempt to populate Profile.ID from the common "id",
+// "sub", "user_id", "uuid", or "login" fields. A non-nil HTTPClient in Config is
+// used for every outbound call, which is how tests inject a stub transport.
+//
+// The VerifyFunc contract mirrors Passport.js: return a non-nil user to
+// establish the session, return a nil user with a nil error to reject the login
+// (reported as an HTTP 401 failure), and return a non-nil error for an internal
+// failure (reported via Context.Error). Compared with the Node passport-oauth2,
+// this port keeps the same redirect/callback shape and verify semantics but is
+// deliberately smaller: it has no built-in state store, no PKCE, and no
+// automatic token refresh, trading those extras for a dependency-free, easily
+// testable core.
 package oauth2
 
 import (

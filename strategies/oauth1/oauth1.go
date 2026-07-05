@@ -1,22 +1,45 @@
 // Package oauth1 implements the core of an OAuth 1.0a (RFC 5849) authentication
-// strategy using HMAC-SHA1 signatures, built on the standard library only.
+// strategy using HMAC-SHA1 signatures, built on the standard library only. It
+// is the shared base that provider wrappers such as strategies/oauth1twitter
+// build on: those packages preset the request-token, authorize, and
+// access-token endpoints and delegate the entire signing and HTTP dance to this
+// package. It ports passport-oauth1, the Node base strategy behind the
+// OAuth 1.0a provider strategies (Twitter and friends), and so it is the core
+// abstraction rather than a standalone provider.
 //
-// It provides two things:
+// Use this package directly when you must authenticate against an OAuth 1.0a
+// provider that has no dedicated wrapper — anything still speaking the pre-OAuth2
+// three-legged protocol with HMAC-SHA1 request signing. Supply the three
+// provider endpoints and your consumer key/secret in a Config and you get a
+// ready passport.Strategy. When a wrapper exists (oauth1twitter), prefer it: it
+// returns a *Strategy from this package, so everything documented here applies.
 //
-//   - Sign, an exported helper that computes the OAuth 1.0a HMAC-SHA1 signature
-//     for a request. Its signature base string construction follows RFC 5849
-//     section 3.4.1 exactly and is verified against a published test vector.
-//   - Strategy, a three-legged OAuth 1.0a flow: with no oauth_token it obtains a
-//     request token from RequestTokenURL and redirects the user agent to
-//     AuthorizeURL; when the provider redirects back with an oauth_verifier it
-//     exchanges that for an access token at AccessTokenURL and reports success.
+// The strategy drives the three-legged flow. On a request with no oauth_verifier
+// it performs the first leg: it obtains a temporary request token from
+// RequestTokenURL (sending oauth_callback when CallbackURL is set) and redirects
+// the user agent to AuthorizeURL with that oauth_token. The provider
+// authenticates the user and redirects back to the callback with an
+// oauth_verifier; on that second request the strategy performs the final leg,
+// exchanging the (oauth_token, oauth_verifier) pair at AccessTokenURL for a
+// long-lived access token and secret, which it passes to the VerifyFunc.
 //
-// SIMPLIFIED: this implementation signs the access-token exchange with an empty
-// token secret. A production three-legged flow must persist the request token
-// secret (returned by the request-token step) in the user's session and use it
-// as the token secret when signing the access-token request. That session
-// plumbing is intentionally out of scope; the signing core and HTTP flow here
-// are complete and correct.
+// Two pieces of machinery are exported for direct use and testing. Sign computes
+// the OAuth 1.0a HMAC-SHA1 oauth_signature for a request; its signature base
+// string construction follows RFC 5849 section 3.4.1 exactly (uppercase method,
+// percent-encoded base URI, sorted percent-encoded parameter string) and is
+// verified against a published test vector. The signing key is
+// percentEncode(consumerSecret) + "&" + percentEncode(tokenSecret), so the empty
+// token secret used before an access token exists still produces a valid key.
+//
+// SIMPLIFIED, and the one deviation from a production flow: this implementation
+// signs the access-token exchange with an empty token secret. A complete
+// three-legged flow must persist the request-token secret returned by the
+// request-token step in the user's session and use it as the token secret when
+// signing the access-token request. That cross-redirect session plumbing is
+// intentionally out of scope; the signing core and HTTP flow here are complete
+// and correct. As with every strategy in this port, the VerifyFunc returns a
+// non-nil user to log in, a nil user (with nil error) to reject as an HTTP 401
+// failure, and a non-nil error to signal an internal error.
 package oauth1
 
 import (

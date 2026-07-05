@@ -45,3 +45,35 @@ func ExampleNew() {
 
 	log.Fatal(http.ListenAndServe(":3000", passport.Chain(mux, p.Initialize(), p.Session())))
 }
+
+// Example_frontend serves the browser side of the basicverify strategy. Like
+// plain Basic auth the credentials must ride in the Authorization header, so the
+// page uses fetch() and constructs "Basic " + btoa("user:pass") to call the
+// "/private" route wired in ExampleNew. If verification fails the server returns a
+// 401 with a WWW-Authenticate: Basic realm="Restricted" header, which is the realm
+// configured on the backend and what a browser would display in its native
+// prompt. The credentials are inlined only to keep the example self-contained; a
+// real page would gather them from a form. The fetch result is written into the
+// page so the outcome is visible.
+func Example_frontend() {
+	const page = `<!doctype html>
+<html>
+<head><title>Basic verify demo</title></head>
+<body>
+  <pre id="out">loading...</pre>
+  <script>
+    fetch("/private", { headers: { "Authorization": "Basic " + btoa("alice:s3cret") } })
+      .then(function (r) { return r.text(); })
+      .then(function (t) { document.getElementById("out").textContent = t; });
+  </script>
+</body>
+</html>`
+
+	mux := http.NewServeMux()
+	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		_, _ = w.Write([]byte(page))
+	})
+
+	log.Fatal(http.ListenAndServe(":8080", mux))
+}

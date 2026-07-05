@@ -36,3 +36,32 @@ func ExampleNew() {
 
 	log.Fatal(http.ListenAndServe(":3000", passport.Chain(mux, p.Initialize(), p.Session())))
 }
+
+// Example_frontend serves a public landing page for a route guarded by the
+// anonymous strategy. Because the anonymous strategy lets unauthenticated
+// requests through, the same page is served to signed-in users and guests alike,
+// which is exactly the case anonymous is meant for. The page shows always-visible
+// content and offers a "Log in" link to a real authentication route (such as an
+// OAuth or local-login endpoint) for visitors who choose to sign in. The backend
+// handler decides what to personalize by calling passport.User to see whether
+// anyone is authenticated. This demonstrates the browser side of optional
+// authentication: no gate, just an optional sign-in affordance.
+func Example_frontend() {
+	const page = `<!doctype html>
+<html>
+<head><title>Welcome</title></head>
+<body>
+  <h1>Public page</h1>
+  <p>Everyone can read this, signed in or not.</p>
+  <a href="/login">Log in</a>
+</body>
+</html>`
+
+	mux := http.NewServeMux()
+	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		_, _ = w.Write([]byte(page))
+	})
+
+	log.Fatal(http.ListenAndServe(":3000", mux))
+}

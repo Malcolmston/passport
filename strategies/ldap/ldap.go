@@ -1,12 +1,40 @@
-// Package ldap implements a username/password strategy whose credential check
-// is an LDAP "bind" operation.
+// Package ldap implements a username/password authentication strategy whose
+// credential check is an LDAP "bind" operation, a standard-library-only port in
+// the spirit of passport-ldapauth. Instead of comparing a password against a
+// local store, it authenticates the user by attempting to bind to a directory
+// server as that user — the canonical way to verify credentials against LDAP or
+// Active Directory.
+//
+// Use this strategy when your users live in a corporate directory and you want
+// them to sign in with their directory username and password. Like the local
+// strategy it reads credentials from a submitted HTML form (fields default to
+// "username" and "password", overridable via UserField and PassField) and
+// establishes a passport session on success, so it slots into the same form-post
+// login route.
+//
+// The flow is: read the username and password from the form, expand the username
+// into a distinguished name (DN) using DNTemplate, and call the configured Bind
+// function with that DN and the presented password. DNTemplate is a fmt template
+// with a single %s for the username (for example
+// "uid=%s,ou=people,dc=example,dc=com"); when empty the raw username is used as
+// the DN. A request missing either credential fails with an HTTP 401 before Bind
+// is called, and a nil Bind is reported as an internal error.
 //
 // SIMPLIFIED: performing a real network LDAP bind requires an LDAP client
-// library, which is out of scope for this standard-library-only port. Instead,
-// the actual bind is delegated to a caller-supplied Bind function: this package
-// reads the username and password from the request form, expands the username
-// into a distinguished name (DN) using DNTemplate, and calls Bind(dn, password).
-// Bind is the single integration point where a real LDAP dial belongs.
+// library, which is out of scope for this dependency-free port. The actual bind
+// is therefore delegated to the caller-supplied Bind function, which is the
+// single integration point where a real LDAP dial belongs — this is where you
+// connect to your directory host, negotiate TLS/StartTLS, and perform the bind
+// (and typically a search to load the user's attributes). Binding with an empty
+// password must be rejected there, since many servers treat it as an anonymous
+// bind that unexpectedly succeeds.
+//
+// The Bind contract follows the rest of this port: return a non-nil user on a
+// successful bind to establish the session; return (nil, nil) or
+// (nil, ErrInvalidCredentials) to reject the login as an HTTP 401 failure; and
+// return (nil, otherErr) for an unexpected error (a connection failure, say),
+// which passport surfaces via Context.Error. The ErrInvalidCredentials sentinel
+// lets a failed bind be distinguished from a genuine fault.
 package ldap
 
 import (

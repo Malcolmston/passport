@@ -1,5 +1,34 @@
-// Package cookietoken authenticates requests by reading a token from a named
-// cookie and validating it with a user-supplied Verify function.
+// Package cookietoken authenticates requests by reading an opaque token from a
+// named HTTP cookie and validating it with a user-supplied VerifyFunc. It is a
+// token-extraction strategy rather than a redirect or credential-prompt flow:
+// the browser is expected to already hold a token (issued by your login
+// endpoint) in a cookie, and this strategy turns that token into an
+// authenticated user on each request.
+//
+// Reach for it when a token lives in a cookie rather than in an Authorization
+// header -- for example a same-site web app that stores a session or API token
+// client-side, or a setup where a reverse proxy or login service drops a signed
+// token cookie that your backend must validate. It is the cookie-based counterpart
+// to a bearer-token strategy.
+//
+// Configuration is through Options. Options.Cookie names the cookie to read and
+// defaults to "token" when empty; Options.Verify is the validation function.
+// On each request the strategy reads that cookie: if it is missing or empty, the
+// request fails with "Missing token" and HTTP 401 without ever calling Verify.
+//
+// When a token is present it is passed to your VerifyFunc, whose contract decides
+// the outcome. Returning a non-nil user authenticates the request and that value
+// becomes passport.User. Returning a nil user (with a nil error), or the
+// ErrInvalidToken sentinel, rejects the request with "Invalid token" and HTTP
+// 401; any other non-nil error is treated as an internal error and reported via
+// Context.Error. The strategy itself does not interpret the token -- signing,
+// expiry, and revocation are entirely up to your Verify function.
+//
+// Security and parity notes: this package only reads and validates the cookie; it
+// does not set it, so issue the cookie from your login handler with the flags your
+// deployment needs (Secure, HttpOnly, SameSite). Because a cookie is sent
+// automatically by the browser, protect state-changing endpoints against CSRF.
+// The strategy registers under the name "cookie-token".
 package cookietoken
 
 import (

@@ -1,6 +1,37 @@
-// Package local implements the username-and-password authentication strategy,
-// a Go port of passport-local. Credentials are read from the request body
-// (form-encoded or JSON) and verified by a user-supplied VerifyFunc.
+// Package local implements the username-and-password authentication strategy, a
+// standard-library-only Go port of passport-local. Credentials are read from the
+// incoming request and checked by a user-supplied verify function, which is the
+// single place your application decides whether a login is valid.
+//
+// Use this strategy for classic form logins where the user submits a username
+// and password directly to your server, rather than being redirected to a
+// third-party identity provider. Register it with passport.Use and guard your
+// login route with passport's Authenticate middleware; on success passport
+// serializes the returned user into the session so subsequent requests are
+// authenticated.
+//
+// Credentials are extracted flexibly: a request with an application/json body is
+// decoded as a JSON object, while any other request is parsed as an HTML form,
+// which also covers query-string parameters. The field names default to
+// "username" and "password" but can be overridden via the UsernameField and
+// PasswordField fields to match your form. A request missing either credential
+// fails immediately with an HTTP 400 before the verify function is called.
+//
+// Two constructors express passport-local's passReqToCallback option. New takes
+// a VerifyFunc that receives just the username and password, while
+// NewWithRequest takes a VerifyFuncReq that additionally receives the
+// *http.Request, letting the verify function read headers, cookies, or
+// request-scoped context during authentication. Exactly one of the two is
+// configured per Strategy.
+//
+// The verify contract mirrors Passport.js. Return a non-nil user to establish
+// the session; return (nil, nil) or (nil, ErrInvalidCredentials) to reject the
+// login as an HTTP 401 failure; and return (nil, otherErr) for an unexpected
+// internal error, which passport reports via Context.Error. The
+// ErrInvalidCredentials sentinel exists so a verify function can distinguish a
+// deliberate rejection from a genuine fault. This port does not hash passwords
+// for you — do that inside the verify function — nor does it implement account
+// lockout or rate limiting.
 package local
 
 import (

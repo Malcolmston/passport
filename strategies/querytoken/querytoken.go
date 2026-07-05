@@ -1,6 +1,33 @@
-// Package querytoken authenticates requests by reading a token from a query
+// Package querytoken authenticates requests by reading a token from a URL query
 // parameter (default "token") and validating it with a user-supplied Verify
-// function.
+// function. It is the query-string analogue of the header- and cookie-based
+// token strategies, filling the same niche as passport-http-bearer configured to
+// read the token from the query string in the Passport.js ecosystem.
+//
+// Use this strategy for the cases where a credential must ride in the URL rather
+// than a header: signed download or unsubscribe links, email confirmation links,
+// webhooks that only support query parameters, WebSocket handshakes, or
+// third-party callbacks that cannot set an Authorization header. For ordinary
+// API calls prefer a header-based bearer token, because query strings are more
+// likely to be logged and leaked.
+//
+// On each request the strategy reads the query parameter named Options.Param
+// (default "token"); a missing or empty value is a 401 failure ("Missing
+// token"). It then passes the raw token to Options.Verify, which validates it and
+// returns the authenticated user. Returning the sentinel ErrInvalidToken is
+// treated as a 401 failure ("Invalid token"), as is returning a nil user with a
+// nil error; any other non-nil error is reported as an internal error rather than
+// a failure. On success the returned user becomes the authenticated user.
+//
+// Because the token appears in the URL, treat it as sensitive: URLs are recorded
+// in browser history, proxy and server access logs, and Referer headers. Prefer
+// single-use, short-lived, high-entropy tokens (for example an HMAC- or
+// JWT-backed value your Verify function checks), always serve over TLS, and where
+// possible rotate or expire the token immediately after use.
+//
+// Parity note: this is a small, focused strategy specific to the Go port. It only
+// reads the token and delegates all validation to Verify, so token format,
+// expiry and revocation are entirely under your control.
 package querytoken
 
 import (

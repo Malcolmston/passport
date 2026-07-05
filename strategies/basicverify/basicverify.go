@@ -1,8 +1,33 @@
 // Package basicverify implements HTTP Basic authentication (RFC 7617) with a
-// user-supplied Verify function and a configurable realm. On failure it records
-// a "Basic realm=..." challenge suitable for a WWW-Authenticate response
-// header. This is a distinct, self-contained implementation from the bundled
-// strategies/basic package.
+// user-supplied verify function and a configurable realm. It is a self-contained
+// sibling of strategies/basic and the same conceptual port of the BasicStrategy
+// from Passport.js's passport-http, packaged with an Options struct so the realm
+// can be set explicitly.
+//
+// Use it where you want Basic auth but need control over the realm reported to
+// clients — for example to present a specific application name in the browser's
+// credential prompt, or to distinguish protected areas. Like Basic auth
+// generally it should run over HTTPS and is usually mounted statelessly with
+// passport.Options{Session: false}.
+//
+// On each request the strategy decodes the "Basic base64(user:pass)"
+// Authorization header and passes the username and password to Options.Verify.
+// When the header is missing or invalid, or verification fails, it records a
+// Basic realm="<Realm>" challenge (Realm defaults to "Users") and, when a
+// response writer is available on the context, also sets the WWW-Authenticate
+// response header so browsers re-prompt.
+//
+// The verify contract mirrors the other credential strategies: a non-nil user
+// authenticates; (nil, nil) or (nil, ErrInvalidCredentials) is an authentication
+// failure that re-issues the challenge; and (nil, err) is an internal error.
+// Verify should compare against a stored password hash rather than a plaintext
+// value.
+//
+// Parity: functionally identical to passport-http's BasicStrategy for the verify
+// form, differing from the bundled strategies/basic only in exposing the realm
+// through Options and in proactively writing the WWW-Authenticate header. It
+// registers under the name "basic-verify" so it can coexist with the "basic"
+// strategy in the same passport.Passport.
 package basicverify
 
 import (

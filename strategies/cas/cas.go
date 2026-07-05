@@ -1,14 +1,35 @@
 // Package cas implements a client for the CAS (Central Authentication Service)
-// single sign-on protocol.
+// single sign-on protocol, in the spirit of Passport.js CAS strategies such as
+// passport-cas / connect-cas. It lets a Go service participate as a CAS client
+// (service) so that authentication is delegated to a central CAS server shared
+// across many applications.
 //
-// With no ?ticket in the request it redirects the user agent to the CAS login
-// page (casBaseURL/login?service=<service>). When CAS redirects back with a
-// ?ticket, the strategy validates it against casBaseURL/serviceValidate and,
-// on success, reports the authenticated username.
+// Use it in organizations — universities are the canonical example — that run a
+// CAS server for site-wide single sign-on. A user who has already signed in to
+// any CAS-protected application is transparently logged in to yours, and logging
+// out centrally logs them out everywhere.
 //
-// SIMPLIFIED: this implements the CAS 2.0 serviceValidate XML flow and parses
-// the <cas:user> element from a success response. It does not implement proxy
-// tickets, attribute release beyond a flat map, or SAML validation.
+// The flow is a browser redirect followed by server-side ticket validation. With
+// no ?ticket in the request the strategy redirects the user agent to
+// casBaseURL/login?service=<service>. CAS authenticates the user and redirects
+// back to the registered service URL with a one-time ?ticket, which the strategy
+// validates out-of-band by GETting casBaseURL/serviceValidate; on a successful
+// <cas:authenticationSuccess> response it reads the <cas:user> element and any
+// released attributes.
+//
+// On a valid ticket the strategy calls VerifyFunc(username, attributes) to map
+// the CAS identity to an application user; when VerifyFunc is nil the username
+// string is used as the user directly. A nil user from VerifyFunc, an invalid or
+// expired ticket, or a validation failure all reject the request, while a
+// non-nil error from VerifyFunc is surfaced as an internal error. Because the
+// ticket is validated server-to-server, tickets are single-use and short-lived,
+// and the Config.HTTPClient hook allows injecting a client (for custom TLS trust
+// or tests).
+//
+// Parity/limitations: this implements the CAS 2.0 serviceValidate XML flow and
+// parses attributes into a flat map. It deliberately omits proxy tickets
+// (proxyValidate/pgtUrl), CAS 3.0 SAML validation, and gateway/renew semantics;
+// those are out of scope for this simplified port.
 package cas
 
 import (

@@ -1,22 +1,40 @@
-// Package googleidtoken verifies a Google-style OpenID Connect id_token
-// presented directly by the client (for example, from Google Sign-In's
-// credential response), rather than running the full redirect flow.
+// Package googleidtoken verifies a Google-style OpenID Connect id_token that is
+// presented directly by the client — for example the JWT credential returned by
+// Google Sign-In or the Google Identity Services button — rather than running
+// the full OAuth 2.0 authorization-code redirect flow. It is the Go analogue of
+// Node's passport-google-id-token strategy and of google-auth-library's
+// verifyIdToken helper, packaged as a passport.Strategy whose Name is
+// "google-id-token".
 //
-// The token is read from an "id_token" query parameter or form field, its
-// signature and expiry are verified, and its audience is checked against the
-// configured client id. On success the token claims become the authenticated
-// user.
+// Use this strategy when the browser already holds a signed id_token and simply
+// forwards it to your backend for validation, which is the common shape of
+// modern client-side Google Sign-In. Because there is no code exchange, no
+// client secret, redirect URI, or session round-trip to the provider is
+// involved; the backend's entire job is to prove the token is authentic,
+// unexpired, and intended for your application before trusting its claims.
 //
-// Verification supports both signing modes:
+// The token is read from an "id_token" query parameter first and, if absent,
+// from an "id_token" POST form field. Its signature and time claims (exp/nbf)
+// are verified, then — when configured — its issuer ("iss") and audience
+// ("aud") claims are checked. On success the decoded jwt.Claims become the
+// authenticated user; any failure results in a 401 with a short reason such as
+// "invalid_token", "invalid_issuer", or "invalid_audience".
 //
-//   - RS256 via Google's JWKS endpoint (the real path). Set Options.JWKSURL to
-//     "https://www.googleapis.com/oauth2/v3/certs"; Google's rotating public
-//     keys are fetched and cached automatically.
-//   - HS256 with a shared secret (Options.Secret), which keeps the strategy
-//     exercisable with the standard library alone (useful for tests).
+// Signature verification supports two modes. The real path is RS256 against
+// Google's rotating public keys published as a JWKS: set Options.JWKSURL to
+// GoogleCertsURL ("https://www.googleapis.com/oauth2/v3/certs") and the keys are
+// fetched and cached (with automatic refetch on key rotation) by the underlying
+// jwks strategy. The alternative is HS256 with a shared secret (Options.Secret),
+// which lets the strategy be exercised with the standard library alone and is
+// intended for tests. When JWKSURL is set it takes precedence over Secret.
 //
-// When JWKSURL is set it takes precedence. Everything else (audience check,
-// expiry check, claim extraction) mirrors real usage.
+// Pin both Options.Audience (your Google OAuth client id, matched against "aud")
+// and Options.Issuer ("https://accounts.google.com" or "accounts.google.com")
+// in production: the audience check is what stops a validly signed token minted
+// for a different application from being accepted by yours. Aside from the
+// client-presented token being read from the request body rather than obtained
+// through a redirect, the audience/issuer pinning, expiry enforcement, and claim
+// extraction mirror the guarantees of the Passport.js strategy it ports.
 package googleidtoken
 
 import (

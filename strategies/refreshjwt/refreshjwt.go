@@ -1,11 +1,40 @@
 // Package refreshjwt authenticates a request using a refresh-token JWT carried
-// in a cookie (default name "refresh_token"). The token is an HS256 JWT
-// (verified via strategies/jwt); on success its claims become the authenticated
-// user, and an expired token yields an authentication failure so the client
-// knows to re-authenticate.
+// in a cookie (default name "refresh_token"). It fills the same role as the
+// refresh-token half of the JWT-based session patterns in the Passport.js
+// ecosystem: a long-lived, signed credential that lets a client obtain fresh
+// short-lived access tokens without re-entering their password.
+//
+// Use this strategy for the token-refresh endpoint of an API. A typical setup
+// issues a short-lived access token (checked by strategies/jwt or bearer) plus a
+// long-lived refresh JWT stored in an HttpOnly cookie; when the access token
+// expires, the client calls the refresh endpoint, this strategy validates the
+// refresh cookie, and the handler mints a new access token. Keeping the refresh
+// token in a self-contained JWT means the server does not need a database lookup
+// to validate it, at the cost of not being able to revoke an individual token
+// before it expires.
+//
+// The token is an HS256 JWT verified via strategies/jwt using Options.Secret.
+// On each request the strategy reads the cookie named Options.Cookie (default
+// "refresh_token"); a missing or empty cookie is a 401 failure ("missing refresh
+// token"). It then parses and verifies the JWT: on success the token's claims
+// become the authenticated user. Signature and other verification failures are
+// reported as a 401 ("invalid refresh token"), and an expired token
+// (jwt.ErrExpired) is reported as a distinct 401 ("refresh token expired") so the
+// client knows to start a full re-authentication rather than retry.
 //
 // Issue is provided as a convenience for minting refresh tokens with a chosen
 // TTL; it is the counterpart used by the tests and by token-issuing endpoints.
+// It sets standard "sub", "iat" and "exp" claims plus a "typ":"refresh" marker
+// (which distinguishes refresh tokens from access tokens), merges any extra
+// claims you pass, and signs the result with the strategy's secret.
+//
+// Security and parity notes: because validation is purely cryptographic there is
+// no built-in revocation, rotation, or reuse-detection — if you need to revoke or
+// rotate refresh tokens, track a token identifier (jti) or version in a store and
+// check it in your refresh handler after this strategy authenticates the cookie.
+// Always store the cookie as HttpOnly, Secure and SameSite to limit exfiltration,
+// and scope it to the refresh path. This mirrors the deliberately minimal,
+// stdlib-only design of the Go port rather than any single Node module.
 package refreshjwt
 
 import (

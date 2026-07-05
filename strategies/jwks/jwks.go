@@ -1,8 +1,49 @@
 // Package jwks verifies JSON Web Tokens signed with asymmetric keys (RS256/384/
 // 512, PS256/384/512, ES256/384/512) whose public keys are published as a JWKS
 // (JSON Web Key Set), as used by OpenID Connect providers such as Google, Auth0,
-// Okta, and Azure AD. It also supports HS256/384/512 with a shared secret. It
-// uses only the standard library.
+// Okta, Azure AD, and Cognito. It combines the roles of Node's passport-jwt
+// strategy (bearer-token authentication) and jwks-rsa (fetching and caching a
+// provider's rotating signing keys) into a single stdlib-only passport.Strategy
+// whose Name is "jwks". The low-level Verify function additionally supports
+// HS256/384/512 with a shared secret for symmetric use cases.
+//
+// Use this strategy to protect an API that accepts provider-issued JWTs — the
+// typical stateless "Authorization: Bearer <jwt>" pattern for single-page apps,
+// mobile clients, and service-to-service calls. Rather than sharing a static
+// secret, the server trusts any token signed by the provider's current private
+// key and validated against the matching public key from the provider's
+// published JWKS, so keys can rotate without redeploying your application.
+//
+// By default the token is read from the Authorization: Bearer header; set
+// Options.TokenFromParam to instead read it from an "id_token" or
+// "access_token" query parameter or form field. The token's signature and
+// exp/nbf time claims are checked first, then Options.Issuer ("iss") and
+// Options.Audience ("aud") are validated when configured. The VerifyFunc maps
+// the verified claims to an application user and may be nil, in which case the
+// raw Claims become the user; returning a nil user (or a non-nil error) rejects
+// the request. Options.Algorithms is an allow-list of accepted "alg" header
+// values (for example {"RS256"}); leaving it empty permits any supported
+// asymmetric algorithm.
+//
+// Signing keys are sourced from exactly one of Options.JWKSURL (fetched over
+// HTTP and cached), Options.Set (a static, pre-loaded key set), or
+// Options.Resolve (a fully custom KeyResolver). For the JWKSURL path, keys are
+// cached for Options.CacheTTL (default one hour) and looked up by the token's
+// "kid" header. Key rotation is handled automatically: an unknown kid triggers
+// a single refetch of the JWKS, and if that refetch fails with a transient
+// error the previously cached keys are served rather than failing outright, so a
+// brief provider outage does not immediately break authentication.
+//
+// A deliberate security guard is that HS* (HMAC) algorithms are never accepted
+// through the JWKS resolver, even if an allow-list would otherwise permit them:
+// this prevents the classic key-confusion attack in which an attacker signs a
+// token with HS256 using the RSA public key as the HMAC secret. HS* remains
+// available only through the low-level Verify function with an explicitly
+// supplied symmetric key. VerifyToken exposes the same cached key resolution
+// without the issuer/audience checks so that higher-level OpenID Connect
+// strategies (such as googleidtoken and jwtbearer) can reuse it. Together these
+// behaviors give parity with the passport-jwt plus jwks-rsa combination from the
+// Passport.js ecosystem.
 package jwks
 
 import (

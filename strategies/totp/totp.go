@@ -1,8 +1,41 @@
 // Package totp implements Time-based One-Time Password (TOTP) authentication as
-// specified in RFC 6238 (SHA1, 6 digits, 30-second time step). A submitted code
-// is verified against the codes valid within a configurable skew of time steps
-// on either side of the current time, to tolerate clock drift. The clock is
-// injected to keep verification deterministic in tests.
+// specified in RFC 6238 (HMAC-SHA1, 6 digits, 30-second time step). It is the
+// Go port of the passport-totp strategy from the Passport.js ecosystem, and is
+// the second-factor building block behind the "enter the 6-digit code from your
+// authenticator app" experience offered by Google Authenticator, Authy, 1Password,
+// and similar apps.
+//
+// Reach for this package to add a time-based one-time-password second factor
+// (2FA/MFA) to an application, or as a passwordless primary factor when the user
+// has already enrolled a shared secret. It pairs naturally with a primary
+// strategy such as the local username/password strategy: authenticate the
+// password first, then require a valid TOTP code before establishing the login
+// session. Because the algorithm is fully standardized, any RFC 6238 authenticator
+// app interoperates without provider-specific code.
+//
+// Enrollment happens outside this package: you generate a random shared secret
+// per user, store it, and present it to the user (typically as an otpauth:// URI
+// rendered as a QR code) so their authenticator app can import it. At sign-in the
+// user reads the current 6-digit code from that app and submits it. The Strategy
+// reads the user identifier and the code from the request's form/query fields
+// (UserField and CodeField, defaulting to "user" and "code"), looks up the secret
+// via the Secret callback, and verifies the code.
+//
+// Verification tolerates clock drift between the server and the authenticator: a
+// submitted code is checked against every code valid within Skew time steps on
+// either side of the current step (Skew defaults to 1, i.e. the previous, current,
+// and next 30-second windows). Comparisons use crypto/subtle constant-time
+// equality to avoid timing side channels. The clock is injected through the Now
+// option so tests can pin a fixed time; in production it defaults to time.Now.
+// Note that TOTP codes are inherently replayable within their window — if you need
+// strict one-time use, record accepted (user, step) pairs and reject repeats.
+//
+// Parity with the Node original is at the algorithm and strategy-contract level:
+// like passport-totp you supply a per-user secret lookup and passport records the
+// authenticated user on a valid code. The Generate helper is exported so callers
+// can build enrollment tooling or verify interoperability, and the fixed
+// parameters (Digits, Step, HMAC-SHA1) match the de-facto standard implemented by
+// mainstream authenticator apps.
 package totp
 
 import (

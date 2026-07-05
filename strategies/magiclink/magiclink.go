@@ -1,12 +1,36 @@
-// Package magiclink implements passwordless "magic link" authentication. A
-// signed, time-limited token is delivered to the user (typically by email) and
-// presented back in the "?token=" query parameter. The token embeds the user's
-// email and an expiry, protected by an HMAC-SHA256 signature.
+// Package magiclink implements passwordless "magic link" authentication, a
+// standard-library-only strategy in the spirit of passport-magic-login. Instead
+// of a password, the user proves control of an email address: the application
+// mints a signed, time-limited token, emails a link containing it, and the user
+// clicks through to be logged in. There is no third-party identity provider and
+// no stored password.
 //
-// Token format:
+// Use this strategy when you want frictionless email-based login. It has two
+// halves. First, an endpoint you write calls Sign to mint a token for the user's
+// email and embeds it in a link (for example
+// "https://app.example.com/verify?token=..."), which you deliver by email.
+// Second, the verify route you guard with this strategy reads the token from the
+// "?token=" query parameter, validates it, and — on success — reports the email
+// as the authenticated user for passport to serialize into the session.
+//
+// The token is self-contained and needs no server-side storage. Its format is:
 //
 //	base64url(payload) + "." + hex(HMAC-SHA256(payload))
 //	payload = "email|expiryUnix"
+//
+// Validation recomputes the HMAC-SHA256 over the payload with the configured
+// Secret and compares it in constant time (hmac.Equal), so a tampered email,
+// expiry, or signature is rejected as an HTTP 401 failure. The embedded expiry
+// is checked against Now (time.Now by default, injectable for tests); an expired
+// token fails. Choose the link lifetime when you call Sign — 15 minutes is a
+// reasonable default.
+//
+// Two security properties deserve emphasis. Expiry bounds the window in which a
+// leaked link is useful, so keep it short. Single use, however, is NOT enforced
+// by this package: because tokens are stateless, a valid token works repeatedly
+// until it expires. If you need strict one-time semantics, record consumed
+// tokens (or bump a per-user secret/nonce) in your verify route. Keep the Secret
+// random and secret; anyone who learns it can forge a login for any email.
 package magiclink
 
 import (

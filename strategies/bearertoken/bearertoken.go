@@ -1,7 +1,32 @@
 // Package bearertoken implements opaque bearer-token authentication via token
-// introspection. The token is read from the "Authorization: Bearer <token>"
-// header and handed to a user-supplied Verify function that introspects it
-// (e.g. against a token store or introspection endpoint).
+// introspection for the passport port. It is a focused variant of the
+// passport-http-bearer idea: the token is read only from the standard
+// "Authorization: Bearer <token>" header and handed to a user-supplied VerifyFunc
+// that introspects it — against a local token store, a cache, or a remote
+// RFC 7662 introspection endpoint.
+//
+// Reach for this strategy when tokens are validated by asking an authority
+// whether they are still active, rather than by verifying a self-contained
+// signature (for which a JWT strategy is more appropriate). It suits API gateways
+// and resource servers in an OAuth2 deployment; like the other token strategies
+// it is stateless and typically mounted with passport.Options{Session: false}.
+//
+// On each request the strategy requires a well-formed "Bearer " Authorization
+// header. If the header is absent, uses a different scheme, or carries an empty
+// token, the request fails with a 401 "Bearer" challenge before VerifyFunc runs.
+// Unlike strategies/bearer it does not consult the query string or form body: the
+// token must be in the header.
+//
+// The VerifyFunc contract has three outcomes: a non-nil user authenticates the
+// request; (nil, nil) or (nil, ErrInvalidToken) rejects it with a Bearer
+// error="invalid_token" challenge; and (nil, err) is treated as an internal error
+// and surfaced via the context. Introspection results are often cacheable for the
+// token's lifetime, which is a decision left to the VerifyFunc.
+//
+// Parity: this maps to passport-http-bearer's header handling while narrowing the
+// token source to the Authorization header only and framing the callback as an
+// introspection step. It registers under the name "bearer-token" so it can be
+// used alongside the header/query/form-capable strategies/bearer package.
 package bearertoken
 
 import (

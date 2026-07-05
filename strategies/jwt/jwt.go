@@ -1,7 +1,46 @@
 // Package jwt implements a JSON Web Token authentication strategy, a Go port of
-// passport-jwt for the common HMAC-SHA256 (HS256) case. It verifies a token's
-// signature and standard time claims (exp, nbf) using only the standard
-// library, then hands the decoded claims to a user-supplied VerifyFunc.
+// the Node passport-jwt strategy for the common HMAC-SHA256 (HS256) case. It
+// verifies a token's signature and standard time claims (exp, nbf) using only
+// the standard library, then hands the decoded claims to a user-supplied
+// VerifyFunc that maps them to an application user.
+//
+// Use this strategy for stateless bearer authentication of APIs, where the
+// client obtains a signed JWT (from a login endpoint or an identity provider
+// that shares a symmetric secret with you) and presents it on subsequent
+// requests. Because the token carries its own claims and is self-verifying, no
+// server-side session store is required: the same secret that signs a token
+// verifies it. The Sign helper is provided as a small convenience for issuing
+// HS256 tokens in tests and simple issuers.
+//
+// The flow reads the token from the "Authorization: Bearer <jwt>" header; a
+// missing token fails with 401 and a "WWW-Authenticate: Bearer" challenge. The
+// token is then parsed by Parse, which splits the compact serialization,
+// verifies that the header's "alg" is HS256, recomputes the HMAC-SHA256
+// signature over "header.payload" with Strategy.Secret, and compares it against
+// the presented signature in constant time (crypto/hmac). It then checks the
+// numeric "exp" and "nbf" claims against the current time, honoring
+// Strategy.Leeway to tolerate small clock skew between issuer and verifier.
+// Verified claims are passed to VerifyFunc; a non-nil user authenticates the
+// request while a nil user rejects it.
+//
+// Security semantics matter here. The strategy accepts HS256 and only HS256:
+// any other "alg" value — including the notorious "none" and asymmetric
+// algorithms like RS256 — is rejected with ErrAlgorithm. This closes the
+// classic JWT algorithm-confusion attack in which an attacker swaps a token's
+// algorithm to trick a verifier into treating a public key (or no key) as the
+// HMAC secret. Signature comparison is constant-time to avoid timing oracles,
+// and the exported sentinels ErrMalformed, ErrSignature, ErrExpired, ErrNotYet,
+// ErrAlgorithm, and ErrNoToken let callers distinguish failure modes. On any
+// verification failure the Authenticate method responds 401 with the header
+// WWW-Authenticate: Bearer error="invalid_token".
+//
+// Parity with Passport.js: this mirrors passport-jwt's model of extracting a
+// bearer token, verifying it, and invoking an application callback with the
+// decoded payload, restricted to the symmetric-key (HS256) profile that the
+// standard library can implement without external dependencies. VerifyFunc
+// corresponds to the Node verify(payload, done) callback, Claims is the decoded
+// payload with a Subject helper for the "sub" claim, and the fromAuthHeaderAsBearerToken
+// extractor is the fixed default here. The Strategy's registered name is "jwt".
 package jwt
 
 import (

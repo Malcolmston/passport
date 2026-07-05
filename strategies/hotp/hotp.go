@@ -1,8 +1,41 @@
 // Package hotp implements HMAC-based One-Time Password (HOTP) authentication as
-// specified in RFC 4226. A submitted 6-digit code is verified against the
-// codes derived from a per-user shared secret and counter, tolerating a
-// forward look-ahead window to account for the client and server counters
-// drifting apart.
+// specified in RFC 4226, packaged as a passport.Strategy whose Name is "hotp".
+// It is the Go analogue of Node's passport-hotp strategy and provides the
+// counter-based counterpart to time-based (TOTP) one-time passwords: the same
+// codes produced by RFC 4226 authenticator apps and hardware tokens.
+//
+// Use this strategy for a second authentication factor, or a primary one, where
+// each valid login consumes the next code in a per-user sequence rather than a
+// code tied to the wall clock. HOTP suits hardware tokens and offline devices
+// that have no reliable clock but can maintain a monotonically increasing
+// counter, and it avoids the time-synchronization requirements of TOTP.
+//
+// On each request the strategy reads the user identifier from Options.UserField
+// (default "user") and the submitted code from Options.CodeField (default
+// "code"), taken from the form or query. It looks up the user's shared secret
+// via Options.Secret and the current expected counter via Options.Counter, then
+// computes the expected 6-digit code (const Digits = 6, exposed by Generate) for
+// each counter value from the current counter up to counter+Window. The
+// submitted code is compared against each candidate with a constant-time
+// comparison (crypto/subtle) to avoid leaking timing information; a match
+// authenticates the user id, and no match yields a 401.
+//
+// The forward look-ahead Window (default 3) tolerates counter drift between the
+// client and server: because a token can advance its counter — for example when
+// a user generates codes that never reach the server — the server accepts a code
+// slightly ahead of its own counter. Widening the window increases tolerance at
+// the cost of accepting more candidate codes, so it should be kept small. The
+// window only looks forward; codes for counters already behind the server are
+// never accepted.
+//
+// A critical responsibility falls on the caller rather than the strategy: HOTP
+// codes are single-use, so after a successful authentication the application
+// must advance the stored counter past the code that was just accepted
+// (Options.Counter must then return the new value), otherwise the same code
+// could be replayed. The Secret and Counter provider functions abstract this
+// per-user state so it can live in whatever store the application uses. This
+// division of labor — verify here, advance the counter in the success handler —
+// mirrors the semantics of the passport-hotp strategy and RFC 4226.
 package hotp
 
 import (

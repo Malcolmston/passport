@@ -1,17 +1,39 @@
 // Package digest implements a SIMPLIFIED form of HTTP Digest access
-// authentication (RFC 7616) using MD5 and qop="auth".
+// authentication (RFC 7616) using MD5 and qop="auth". It is the Go port of the
+// Passport.js passport-http Digest strategy: rather than transmitting a password,
+// the client proves knowledge of it by sending a hash computed over a
+// server-issued nonce, so the cleartext secret never travels on the wire.
 //
-// When a request carries no Digest Authorization header, the strategy fails
-// with a "Digest realm=..., nonce=..., qop=auth" challenge suitable for a
-// WWW-Authenticate response header. When a Digest header is present, the
-// response digest is recomputed from the supplied parameters and the user's
-// secret and compared in constant time.
+// Use it when you want browser-native credential prompts without building a login
+// form or when interoperating with clients (tools, devices, curl --digest) that
+// speak Digest. Because the browser itself renders the username/password dialog
+// in response to the challenge, there is no HTML frontend to write; the "frontend"
+// is simply any request to a protected URL. Digest is stateless per request, so
+// pair the strategy with passport.Options{Session: false}.
 //
-// SIMPLIFICATION: this implementation does NOT track issued nonces, nonce
-// counts (nc), or opaque values, so it does not defend against replay attacks
-// and it accepts any well-formed nonce echoed by the client. Do not use it as
-// the sole protection for sensitive resources; layer it over TLS and, for real
-// replay protection, add server-side nonce/nc bookkeeping.
+// The exchange works in two steps. When a request carries no Digest Authorization
+// header, the strategy fails with a "Digest realm=..., nonce=..., qop=auth"
+// challenge, which it also sets as a WWW-Authenticate response header so the
+// client knows how to respond. When a Digest header is present, the strategy looks
+// up the user's secret via Options.Secret, recomputes the expected response digest
+// from the request method, URI, realm, nonce, and (for qop) the client nonce and
+// nonce count, and compares it against the client's value in constant time.
+//
+// Semantics and the verify contract: Options.Secret returns the cleartext
+// password (or a precomputed HA1) for a username, and returning an empty string
+// rejects that user by re-issuing the challenge. A malformed header, a missing
+// username or response, or a digest mismatch all result in a fresh challenge
+// rather than a hard error, which is how browsers are prompted to retry. On a
+// successful match the username becomes the authenticated user (passport.User).
+// Options.Realm defaults to "Users", and Options.Nonce may be injected to make the
+// challenge deterministic in tests.
+//
+// SIMPLIFICATION and security caveats: this implementation does NOT track issued
+// nonces, nonce counts (nc), or opaque values, so it does not defend against
+// replay attacks and it accepts any well-formed nonce echoed by the client. It
+// also uses MD5, which is weak. Do not use it as the sole protection for sensitive
+// resources; layer it over TLS and, for real replay protection, add server-side
+// nonce/nc bookkeeping. The strategy registers under the name "digest".
 package digest
 
 import (
