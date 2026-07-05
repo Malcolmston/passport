@@ -38,13 +38,13 @@ import (
 
 // Config holds the client credentials and endpoints for an OAuth 1.0a provider.
 type Config struct {
-	ConsumerKey    string
-	ConsumerSecret string
+	ConsumerKey    string // OAuth 1.0a consumer (application) key
+	ConsumerSecret string // OAuth 1.0a consumer (application) secret
 
-	RequestTokenURL string
-	AuthorizeURL    string
-	AccessTokenURL  string
-	CallbackURL     string
+	RequestTokenURL string // provider endpoint that issues request tokens
+	AuthorizeURL    string // provider endpoint the user is redirected to
+	AccessTokenURL  string // provider endpoint that exchanges for access tokens
+	CallbackURL     string // URL the provider redirects back to after authorization
 
 	// HTTPClient is used for the request-token and access-token exchanges.
 	// When nil, http.DefaultClient is used. Injectable for tests.

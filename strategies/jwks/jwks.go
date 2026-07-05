@@ -48,12 +48,16 @@ func (c Claims) Audience() []string {
 	return nil
 }
 
-// Common errors.
+// Common errors returned when validating a token against a JWKS.
 var (
+	// ErrMalformed indicates the token could not be parsed.
 	ErrMalformed = errors.New("jwks: malformed token")
+	// ErrSignature indicates the token signature did not verify.
 	ErrSignature = errors.New("jwks: signature verification failed")
+	// ErrAlgorithm indicates the token uses an unsupported or unexpected algorithm.
 	ErrAlgorithm = errors.New("jwks: unsupported or unexpected algorithm")
-	ErrKey       = errors.New("jwks: no matching key")
+	// ErrKey indicates no key in the JWKS matched the token's key ID.
+	ErrKey = errors.New("jwks: no matching key")
 )
 
 // header is the decoded JWT header.
@@ -228,20 +232,20 @@ func numeric(v any) (float64, bool) {
 
 // JWK is a single JSON Web Key.
 type JWK struct {
-	Kty string `json:"kty"`
-	Kid string `json:"kid"`
-	Alg string `json:"alg"`
-	Use string `json:"use"`
-	N   string `json:"n"` // RSA modulus (base64url)
-	E   string `json:"e"` // RSA exponent (base64url)
-	Crv string `json:"crv"`
-	X   string `json:"x"` // EC x (base64url)
-	Y   string `json:"y"` // EC y (base64url)
+	Kty string `json:"kty"` // key type, e.g. "RSA" or "EC"
+	Kid string `json:"kid"` // key ID used to match a token's "kid" header
+	Alg string `json:"alg"` // intended signing algorithm, e.g. "RS256"
+	Use string `json:"use"` // intended key use, e.g. "sig"
+	N   string `json:"n"`   // RSA modulus (base64url)
+	E   string `json:"e"`   // RSA exponent (base64url)
+	Crv string `json:"crv"` // EC curve name, e.g. "P-256"
+	X   string `json:"x"`   // EC x (base64url)
+	Y   string `json:"y"`   // EC y (base64url)
 }
 
 // Set is a JSON Web Key Set.
 type Set struct {
-	Keys []JWK `json:"keys"`
+	Keys []JWK `json:"keys"` // the keys in the set
 }
 
 // PublicKey converts a JWK to a crypto.PublicKey (*rsa.PublicKey or

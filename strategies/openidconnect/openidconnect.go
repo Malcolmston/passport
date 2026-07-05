@@ -36,13 +36,13 @@ import (
 
 // Config holds the OIDC client configuration.
 type Config struct {
-	Issuer       string
-	ClientID     string
-	ClientSecret string
-	RedirectURL  string
+	Issuer       string // OIDC issuer identifier, validated against the id_token "iss" claim
+	ClientID     string // OAuth2 client (application) ID
+	ClientSecret string // OAuth2 client (application) secret
+	RedirectURL  string // URL the provider redirects back to after authorization
 
-	AuthURL  string
-	TokenURL string
+	AuthURL  string // provider authorization endpoint
+	TokenURL string // provider token-exchange endpoint
 
 	// JWKSURL is the provider's JWKS endpoint. When set, id_tokens are verified
 	// with the asymmetric keys (RS256/ES256/PS256) published there, which is

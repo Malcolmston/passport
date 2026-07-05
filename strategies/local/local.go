@@ -30,9 +30,11 @@ type VerifyFuncReq func(r *http.Request, username, password string) (user any, e
 
 // Strategy authenticates requests with a username and password.
 type Strategy struct {
-	// UsernameField and PasswordField name the request fields holding the
-	// credentials. They default to "username" and "password".
+	// UsernameField names the request field holding the username. It
+	// defaults to "username".
 	UsernameField string
+	// PasswordField names the request field holding the password. It
+	// defaults to "password".
 	PasswordField string
 
 	verify    VerifyFunc

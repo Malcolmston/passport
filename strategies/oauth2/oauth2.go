@@ -19,15 +19,15 @@ import (
 
 // Config holds the endpoints and client credentials for an OAuth2 provider.
 type Config struct {
-	ClientID     string
-	ClientSecret string
-	RedirectURL  string
+	ClientID     string // OAuth2 client (application) ID
+	ClientSecret string // OAuth2 client (application) secret
+	RedirectURL  string // URL the provider redirects back to after authorization
 
-	AuthURL     string
-	TokenURL    string
-	UserInfoURL string
+	AuthURL     string // provider authorization endpoint
+	TokenURL    string // provider token-exchange endpoint
+	UserInfoURL string // provider endpoint returning the authenticated user's profile
 
-	Scopes []string
+	Scopes []string // OAuth2 scopes requested during authorization
 
 	// HTTPClient is used for the token exchange and userinfo requests. When
 	// nil, http.DefaultClient is used. Injectable for tests.
@@ -36,10 +36,10 @@ type Config struct {
 
 // Profile is the normalized identity produced by a successful authentication.
 type Profile struct {
-	Provider    string
-	ID          string
-	Raw         map[string]any
-	AccessToken string
+	Provider    string         // name of the provider that issued the profile
+	ID          string         // provider-specific unique user identifier
+	Raw         map[string]any // raw decoded userinfo response from the provider
+	AccessToken string         // access token obtained during the exchange
 }
 
 // VerifyFunc maps a fetched Profile to an application user. Returning a nil
@@ -56,11 +56,11 @@ type Strategy struct {
 
 // Token is the parsed response from the token endpoint.
 type Token struct {
-	AccessToken  string `json:"access_token"`
-	TokenType    string `json:"token_type"`
-	RefreshToken string `json:"refresh_token"`
-	ExpiresIn    int    `json:"expires_in"`
-	Scope        string `json:"scope"`
+	AccessToken  string `json:"access_token"`  // token used to authorize API requests
+	TokenType    string `json:"token_type"`    // token type, typically "Bearer"
+	RefreshToken string `json:"refresh_token"` // token used to obtain a new access token
+	ExpiresIn    int    `json:"expires_in"`    // access-token lifetime in seconds
+	Scope        string `json:"scope"`         // scopes granted with the token
 }
 
 // New creates a Strategy registered under name using cfg and verify.

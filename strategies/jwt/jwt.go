@@ -29,12 +29,18 @@ type VerifyFunc func(claims Claims) (user any, err error)
 
 // Common verification errors.
 var (
+	// ErrMalformed indicates the token could not be parsed.
 	ErrMalformed = errors.New("jwt: malformed token")
+	// ErrSignature indicates the token signature did not verify.
 	ErrSignature = errors.New("jwt: signature verification failed")
-	ErrExpired   = errors.New("jwt: token expired")
-	ErrNotYet    = errors.New("jwt: token not valid yet")
+	// ErrExpired indicates the token's exp claim is in the past.
+	ErrExpired = errors.New("jwt: token expired")
+	// ErrNotYet indicates the token's nbf claim is in the future.
+	ErrNotYet = errors.New("jwt: token not valid yet")
+	// ErrAlgorithm indicates the token uses an unexpected signing algorithm.
 	ErrAlgorithm = errors.New("jwt: unexpected signing algorithm")
-	ErrNoToken   = errors.New("jwt: no token supplied")
+	// ErrNoToken indicates no token was supplied on the request.
+	ErrNoToken = errors.New("jwt: no token supplied")
 )
 
 // Strategy authenticates requests carrying a signed JWT.

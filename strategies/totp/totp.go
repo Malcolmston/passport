@@ -17,10 +17,11 @@ import (
 	"github.com/malcolmston/passport"
 )
 
-// Digits is the number of digits in a generated code and Step is the time step.
 const (
+	// Digits is the number of digits in a generated TOTP code.
 	Digits = 6
-	Step   = 30 * time.Second
+	// Step is the time step over which each TOTP code is valid.
+	Step = 30 * time.Second
 )
 
 // Generate returns the RFC 6238 TOTP value for the given secret at time t.

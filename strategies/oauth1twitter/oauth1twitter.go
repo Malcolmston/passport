@@ -7,16 +7,19 @@ import "github.com/malcolmston/passport/strategies/oauth1"
 
 // Twitter's OAuth 1.0a endpoints.
 const (
+	// RequestTokenURL is Twitter's OAuth 1.0a request-token endpoint.
 	RequestTokenURL = "https://api.twitter.com/oauth/request_token"
-	AuthorizeURL    = "https://api.twitter.com/oauth/authorize"
-	AccessTokenURL  = "https://api.twitter.com/oauth/access_token"
+	// AuthorizeURL is Twitter's OAuth 1.0a user-authorization endpoint.
+	AuthorizeURL = "https://api.twitter.com/oauth/authorize"
+	// AccessTokenURL is Twitter's OAuth 1.0a access-token endpoint.
+	AccessTokenURL = "https://api.twitter.com/oauth/access_token"
 )
 
 // Config carries the Twitter application credentials and callback URL.
 type Config struct {
-	ConsumerKey    string
-	ConsumerSecret string
-	CallbackURL    string
+	ConsumerKey    string // Twitter application consumer key
+	ConsumerSecret string // Twitter application consumer secret
+	CallbackURL    string // URL Twitter redirects back to after authorization
 }
 
 // New builds an oauth1.Strategy named "twitter" wired to Twitter's endpoints.
