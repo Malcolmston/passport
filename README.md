@@ -5,7 +5,6 @@
 [![Go Vuln](https://github.com/Malcolmston/passport/actions/workflows/go-vuln.yml/badge.svg)](https://github.com/Malcolmston/passport/actions/workflows/go-vuln.yml)
 [![Web Unit](https://github.com/Malcolmston/passport/actions/workflows/web-unit.yml/badge.svg)](https://github.com/Malcolmston/passport/actions/workflows/web-unit.yml)
 [![Web E2E](https://github.com/Malcolmston/passport/actions/workflows/web-e2e.yml/badge.svg)](https://github.com/Malcolmston/passport/actions/workflows/web-e2e.yml)
-[![CodeQL](https://github.com/Malcolmston/passport/actions/workflows/codeql.yml/badge.svg)](https://github.com/Malcolmston/passport/actions/workflows/codeql.yml)
 [![Go Reference](https://pkg.go.dev/badge/github.com/malcolmston/passport.svg)](https://pkg.go.dev/github.com/malcolmston/passport)
 [![Go Report Card](https://goreportcard.com/badge/github.com/malcolmston/passport)](https://goreportcard.com/report/github.com/malcolmston/passport)
 [![Go Version](https://img.shields.io/github/go-mod/go-version/Malcolmston/passport)](go.mod)
