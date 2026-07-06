@@ -9,13 +9,18 @@ import (
 	"github.com/malcolmston/passport/strategies/digest"
 )
 
-// ExampleNew shows the full wiring for simplified HTTP Digest authentication
-// (RFC 7616): register the strategy with passport, then guard a route with it.
-// Browsers present a native username/password prompt for a Digest challenge, so
-// no custom login form is needed.
+// ExampleNew shows the full wiring for simplified HTTP Digest authentication (RFC
+// 7616): register the strategy with passport, then guard a route with it. The
+// Options.Secret callback returns the cleartext password (or precomputed HA1) for
+// a username, and returning an empty string rejects an unknown user. When a
+// request arrives without a valid Digest header the strategy issues a
+// WWW-Authenticate challenge, and the browser responds by showing its native
+// username/password prompt, so no custom login form is needed. On a matching
+// response the username becomes the authenticated user. The protected route is
+// mounted with passport.Options{Session: false} because Digest is stateless.
 //
-// A client authenticates by echoing the challenge with a computed response;
-// curl does the digest handshake for you with --digest:
+// A client authenticates by echoing the challenge with a computed response; curl
+// does the digest handshake for you with --digest:
 //
 //	curl --digest -u alice:s3cret http://localhost:3000/private
 func ExampleNew() {
@@ -43,4 +48,28 @@ func ExampleNew() {
 	mux.Handle("/private", p.Authenticate("digest", passport.Options{Session: false})(protected))
 
 	log.Fatal(http.ListenAndServe(":3000", passport.Chain(mux, p.Initialize(), p.Session())))
+}
+
+// Example_frontend shows the browser side of HTTP Digest, which is unusual in that
+// there is no login form to build. The browser itself renders a native
+// username/password dialog whenever it receives the WWW-Authenticate challenge
+// that the strategy sends for the protected resource. So the only "frontend" you
+// need is a way to reach that resource: this page serves a plain link to the
+// Digest-protected route, and following it triggers the browser prompt. Once the
+// user enters valid credentials the browser computes the digest response and
+// retries automatically, and it remembers the credentials for the realm for the
+// rest of the session.
+func Example_frontend() {
+	mux := http.NewServeMux()
+	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		fmt.Fprint(w, `<!doctype html>
+<title>Members area</title>
+<!-- Following this link to a Digest-protected resource makes the browser show
+     its native username/password dialog; no custom form is needed. -->
+<a href="/private">Enter the members area</a>
+`)
+	})
+
+	log.Fatal(http.ListenAndServe(":3000", mux))
 }

@@ -9,11 +9,17 @@ import (
 	"github.com/malcolmston/passport/strategies/oauth1"
 )
 
-// ExampleNew shows the full wiring for the generic OAuth 1.0a strategy: register
-// it with passport, then mount the login and provider-callback routes. With no
-// oauth_verifier the strategy obtains a request token and redirects the browser
-// to the provider; the provider redirects back to the callback with the
-// verifier, which is exchanged for an access token.
+// ExampleNew shows the full server-side wiring for the generic OAuth 1.0a
+// strategy, the shared base that provider wrappers such as oauth1twitter build
+// on. It registers the strategy with passport under the name "oauth1", supplying
+// the consumer key and secret, the three provider endpoints, the callback URL,
+// and a verify function that maps the granted access token and token parameters
+// to your application user. The /auth/oauth1 route begins login; with no
+// oauth_verifier present the strategy fetches a request token and redirects the
+// browser to the provider's authorize page. The provider redirects back to
+// /auth/oauth1/callback with the verifier, which the strategy exchanges for an
+// access token before running verify. On success the callback handler runs and
+// the user is established in the session.
 func ExampleNew() {
 	p := passport.New()
 
@@ -47,4 +53,24 @@ func ExampleNew() {
 
 	// Install passport for every request, then serve.
 	log.Fatal(http.ListenAndServe(":3000", passport.Chain(mux, p.Initialize(), p.Session())))
+}
+
+// Example_frontend shows the browser side of the generic OAuth 1.0a login. It
+// serves a page with a single "Sign in" button (an anchor) that points at the
+// application's /auth/oauth1 route. When the visitor clicks it, the passport
+// Authenticate handler mounted on that route obtains a request token and
+// redirects the browser onward to the provider's authorization page. After the
+// user approves, the provider redirects back to the callback route wired in
+// ExampleNew, which completes the login. This handler renders only the generic
+// entry-point button; the OAuth 1.0a request-token dance is handled server-side
+// by the strategy.
+func Example_frontend() {
+	mux := http.NewServeMux()
+	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		_, _ = w.Write([]byte(`<!doctype html>
+<title>Sign in</title>
+<a href="/auth/oauth1">Sign in</a>`))
+	})
+	log.Fatal(http.ListenAndServe(":3000", mux))
 }

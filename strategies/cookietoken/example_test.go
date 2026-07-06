@@ -9,8 +9,14 @@ import (
 	"github.com/malcolmston/passport/strategies/cookietoken"
 )
 
-// ExampleNew shows the full wiring for the cookietoken strategy: register it
-// with passport, then mount a route protected by the token check.
+// ExampleNew shows the full wiring for the cookietoken strategy. It registers the
+// strategy with a passport instance, naming the cookie to read and supplying a
+// verify func that maps the raw token to your application user. On each request
+// the strategy reads the configured cookie and, if present, passes its value to
+// verify; a missing cookie fails with HTTP 401 before verify is ever called. The
+// verify func returns a non-nil user to authenticate, or a nil user (or
+// cookietoken.ErrInvalidToken) to reject the request. The strategy registers under
+// the name "cookie-token".
 //
 // A client supplies the token in the configured cookie (here "token"):
 //
@@ -42,4 +48,33 @@ func ExampleNew() {
 
 	// Install passport for every request, then serve.
 	log.Fatal(http.ListenAndServe(":3000", passport.Chain(mux, p.Initialize(), p.Session())))
+}
+
+// Example_frontend shows the browser side of the cookietoken strategy. It serves
+// a small HTML page whose script stores the token issued by your login endpoint
+// in the same cookie the strategy reads (here "token"), then makes an ordinary
+// fetch to the protected route. Because cookies are attached automatically by the
+// browser, no Authorization header or extra client code is needed on subsequent
+// requests. In production you should set this cookie from the server with the
+// Secure and HttpOnly flags rather than from client-side script; the JavaScript
+// assignment here is only to illustrate what value the strategy expects. Serve
+// this page from your login screen after the user has obtained a token.
+func Example_frontend() {
+	mux := http.NewServeMux()
+	mux.HandleFunc("/login", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		fmt.Fprint(w, `<!doctype html>
+<title>Log in</title>
+<script>
+  // Store the token issued by your login endpoint in the cookie the strategy
+  // reads. Prefer a Secure, HttpOnly cookie set by the server in production.
+  document.cookie = "token=s3cr3t-token; path=/; SameSite=Strict";
+
+  // Subsequent requests automatically carry the cookie.
+  fetch("/api/me").then(function (r) { return r.text(); }).then(console.log);
+</script>
+`)
+	})
+
+	log.Fatal(http.ListenAndServe(":3000", mux))
 }
