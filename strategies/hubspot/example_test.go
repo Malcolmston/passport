@@ -1,7 +1,6 @@
 package hubspot_test
 
 import (
-	"io"
 	"log"
 	"net/http"
 
@@ -10,17 +9,8 @@ import (
 	"github.com/malcolmston/passport/strategies/oauth2"
 )
 
-// ExampleNew shows the full wiring for the HubSpot OAuth2 strategy. First the
-// strategy is registered with passport via p.Use, passing the client
-// credentials, the callback URL, and a verify function. Because HubSpot has no
-// userinfo endpoint, the fetched oauth2.Profile carries an empty Raw map, so
-// the verify function typically works from profile.AccessToken and rejects the
-// login by returning a nil user (with a nil error). The /auth/hubspot route
-// begins the flow by redirecting the browser to HubSpot's authorization page,
-// and the /auth/hubspot/callback route completes it after HubSpot redirects
-// back with an authorization code. In the browser, a user clicks a "Sign in
-// with HubSpot" link pointing at /auth/hubspot, authorizes the app on HubSpot,
-// and is returned to the callback route where the success handler runs.
+// ExampleNew shows the full wiring for the Hubspot OAuth2 strategy: register it
+// with passport, then mount the login and provider-callback routes.
 func ExampleNew() {
 	p := passport.New()
 
@@ -47,26 +37,4 @@ func ExampleNew() {
 
 	// Install passport for every request, then serve.
 	log.Fatal(http.ListenAndServe(":3000", passport.Chain(mux, p.Initialize(), p.Session())))
-}
-
-// Example_frontend shows the browser side of the HubSpot login flow. The front
-// end does not talk OAuth itself; it is just an anchor pointing at the server's
-// /auth/hubspot route. When the user clicks the link, the server redirects the
-// browser to HubSpot, where the user authorizes the application. HubSpot then
-// sends the browser back to the /auth/hubspot/callback route, which finishes
-// the exchange and establishes the session. The page below is the entire
-// client-side contribution to authentication.
-func Example_frontend() {
-	const page = `<!doctype html>
-<html>
-  <body>
-    <a href="/auth/hubspot">Sign in with HubSpot</a>
-  </body>
-</html>`
-	mux := http.NewServeMux()
-	mux.HandleFunc("/login", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		_, _ = io.WriteString(w, page)
-	})
-	_ = mux
 }

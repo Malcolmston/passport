@@ -9,16 +9,15 @@ import (
 	"github.com/malcolmston/passport/strategies/apitoken"
 )
 
-// ExampleNew shows the full backend wiring for opaque API-token authentication.
-// It registers the strategy with passport, using a Lookup func that resolves a
-// presented token to a user with a constant-time comparison (for a single fixed
-// token, set Options.Token and Options.User instead). The strategy registers
-// under the name "api-token" (its Name()), so that is the name passed to
-// Authenticate, and it is mounted with passport.Options{Session: false} because
-// tokens are stateless. On each request the token is read from the Authorization
-// header ("Bearer <t>" or "Token <t>") or the configured "X-API-Token" header,
-// and only a successful lookup lets the protected handler run. A client
-// authenticates by presenting the token:
+// ExampleNew shows the full wiring for opaque API-token authentication:
+// register the strategy with passport, then guard a route with it. The token is
+// read from the Authorization header ("Bearer <t>" or "Token <t>") or from the
+// configured header (here "X-API-Token").
+//
+// The strategy registers under the name "api-token" (its Name()), so that is
+// the name passed to Authenticate.
+//
+// A client authenticates by presenting the token:
 //
 //	curl -H "Authorization: Bearer t0k3n-abc123" http://localhost:3000/private
 //	curl -H "X-API-Token: t0k3n-abc123"          http://localhost:3000/private
@@ -48,38 +47,4 @@ func ExampleNew() {
 	mux.Handle("/private", p.Authenticate("api-token", passport.Options{Session: false})(protected))
 
 	log.Fatal(http.ListenAndServe(":3000", passport.Chain(mux, p.Initialize(), p.Session())))
-}
-
-// Example_frontend serves the HTML+JavaScript page a browser client uses to call
-// an apitoken-protected endpoint. The page runs a fetch() against the "/private"
-// route wired in ExampleNew, sending the token in the "Authorization: Bearer
-// <token>" header, which is one of the two places the strategy looks (the other
-// being the configured X-API-Token header). The token is embedded in client
-// script only to keep the example self-contained; a real deployment keeps such
-// service tokens on the server. The response text is written into the page so the
-// outcome is visible. This is the exact browser side that matches the
-// header-based backend.
-func Example_frontend() {
-	const page = `<!doctype html>
-<html>
-<head><title>API token demo</title></head>
-<body>
-  <pre id="out">loading...</pre>
-  <script>
-    fetch("/private", { headers: { "Authorization": "Bearer t0k3n-abc123" } })
-      .then(function (r) { return r.text(); })
-      .then(function (t) { document.getElementById("out").textContent = t; });
-    // Or, using the custom header:
-    //   fetch("/private", { headers: { "X-API-Token": "t0k3n-abc123" } })
-  </script>
-</body>
-</html>`
-
-	mux := http.NewServeMux()
-	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		_, _ = w.Write([]byte(page))
-	})
-
-	log.Fatal(http.ListenAndServe(":8080", mux))
 }

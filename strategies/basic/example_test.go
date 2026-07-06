@@ -9,16 +9,13 @@ import (
 	"github.com/malcolmston/passport/strategies/basic"
 )
 
-// ExampleNew shows the full backend wiring for HTTP Basic authentication
-// (RFC 7617). It registers the strategy with a VerifyFunc that receives the
-// decoded username and password and returns the authenticated user, then mounts
-// it on "/private" with passport.Options{Session: false} because Basic sends
-// credentials on every request. When the Authorization header is missing or
-// verification fails, the strategy replies 401 with a Basic realm challenge, so
-// browsers show their native credential prompt and no custom login form is
-// required. Only a successful verification lets the protected handler run. A
-// client authenticates by sending the credentials in the Authorization header
-// (curl encodes "user:pass" for you):
+// ExampleNew shows the full wiring for HTTP Basic authentication (RFC 7617):
+// register the strategy with passport, then guard a route with it. Browsers
+// present a native username/password prompt for a Basic challenge, so no custom
+// login form is needed.
+//
+// A client authenticates by sending the credentials in the Authorization
+// header (curl encodes "user:pass" for you):
 //
 //	curl -u alice:s3cret http://localhost:3000/private
 func ExampleNew() {
@@ -44,37 +41,4 @@ func ExampleNew() {
 	mux.Handle("/private", p.Authenticate("basic", passport.Options{Session: false})(protected))
 
 	log.Fatal(http.ListenAndServe(":3000", passport.Chain(mux, p.Initialize(), p.Session())))
-}
-
-// Example_frontend serves a page that authenticates against a Basic-protected
-// endpoint from the browser. Because HTTP Basic credentials live in the
-// Authorization header, the page uses fetch() and builds that header with
-// btoa("username:password"), which is exactly what the strategy decodes on the
-// server. In many cases you do not need this page at all: navigating a browser
-// directly to a Basic-protected URL triggers the built-in username/password
-// prompt, and this fetch form is for AJAX calls that must supply the header
-// themselves. The credentials appear in client script only for the example; a
-// real app would collect them from a form. The response text is shown on the page
-// so the result is visible.
-func Example_frontend() {
-	const page = `<!doctype html>
-<html>
-<head><title>Basic auth demo</title></head>
-<body>
-  <pre id="out">loading...</pre>
-  <script>
-    fetch("/private", { headers: { "Authorization": "Basic " + btoa("alice:s3cret") } })
-      .then(function (r) { return r.text(); })
-      .then(function (t) { document.getElementById("out").textContent = t; });
-  </script>
-</body>
-</html>`
-
-	mux := http.NewServeMux()
-	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		_, _ = w.Write([]byte(page))
-	})
-
-	log.Fatal(http.ListenAndServe(":8080", mux))
 }

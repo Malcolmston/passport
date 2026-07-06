@@ -9,16 +9,8 @@ import (
 	"github.com/malcolmston/passport/strategies/oauth2"
 )
 
-// ExampleNew shows the full server-side wiring for the Meetup OAuth2 strategy. It
-// registers the strategy with passport under the name "meetup", supplying the
-// client credentials, the callback URL, and a verify function that maps the result
-// to your application user. The /auth/meetup route begins login by redirecting the
-// browser to Meetup; with no ?code= present the strategy issues that redirect.
-// Meetup then redirects back to /auth/meetup/callback with a code, which the
-// strategy exchanges for an access token before running verify. Because Meetup has
-// no userinfo endpoint here, identify the user from Profile.AccessToken inside
-// verify; on success the callback handler runs and the user is established in the
-// session.
+// ExampleNew shows the full wiring for the Meetup OAuth2 strategy: register it
+// with passport, then mount the login and provider-callback routes.
 func ExampleNew() {
 	p := passport.New()
 
@@ -45,23 +37,4 @@ func ExampleNew() {
 
 	// Install passport for every request, then serve.
 	log.Fatal(http.ListenAndServe(":3000", passport.Chain(mux, p.Initialize(), p.Session())))
-}
-
-// Example_frontend shows the browser side of Meetup login. It serves a page
-// containing a single "Sign in with Meetup" link that points at the application's
-// /auth/meetup route. When the visitor clicks it, the passport Authenticate
-// handler mounted on that route redirects the browser onward to Meetup's consent
-// screen. After the user approves, Meetup redirects back to the callback route
-// wired in ExampleNew, which completes the login. This handler renders only the
-// entry-point link; the OAuth redirect dance itself is handled server-side by the
-// strategy.
-func Example_frontend() {
-	mux := http.NewServeMux()
-	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		_, _ = w.Write([]byte(`<!doctype html>
-<title>Sign in</title>
-<a href="/auth/meetup">Sign in with Meetup</a>`))
-	})
-	log.Fatal(http.ListenAndServe(":3000", mux))
 }

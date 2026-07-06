@@ -2,7 +2,6 @@ package jwks_test
 
 import (
 	"fmt"
-	"io"
 	"log"
 	"net/http"
 
@@ -10,16 +9,9 @@ import (
 	"github.com/malcolmston/passport/strategies/jwks"
 )
 
-// ExampleNew shows the full wiring for the JWKS strategy. The strategy is
-// registered with passport under its name "jwks" and configured to fetch and
-// cache the provider's signing keys from a JWKS endpoint. Tokens are verified
-// against those rotating public keys, restricted to RS256 by the Algorithms
-// allow-list, with the Issuer and Audience pinned to the provider and your
-// application. The verify func maps the verified claims to your user — here the
-// "sub" claim — and returning nil would reject the token. A single route is
-// protected: by default the strategy reads the JWT from the "Authorization:
-// Bearer" header, and only after successful verification does the protected
-// handler run.
+// ExampleNew shows the full wiring for the JWKS strategy: verify RS256/ES256
+// tokens against an OpenID Connect provider's published key set, register the
+// strategy with passport, and mount a protected route.
 func ExampleNew() {
 	p := passport.New()
 
@@ -47,36 +39,4 @@ func ExampleNew() {
 
 	// Install passport for every request, then serve.
 	log.Fatal(http.ListenAndServe(":3000", passport.Chain(mux, p.Initialize(), p.Session())))
-}
-
-// Example_frontend shows the browser side that matches where this strategy
-// reads the credential. By default the jwks strategy expects the token in the
-// "Authorization: Bearer <jwt>" request header, so the script obtains a
-// provider-issued JWT and sends it via fetch with that header. The token itself
-// would normally come from an OpenID Connect sign-in flow; here it is a
-// placeholder to keep the example self-contained. The request targets /api/me,
-// the same route the strategy protects on the server, so the bearer token flows
-// straight into verification against the provider's published key set. The
-// login page is served from a local ServeMux only to make this a runnable,
-// self-contained example.
-func Example_frontend() {
-	const page = `<!doctype html>
-<html><body>
-  <pre id="out"></pre>
-  <script>
-    // In production this comes from your OpenID Connect sign-in flow.
-    var token = "PROVIDER_ISSUED_JWT";
-    fetch("/api/me", {
-      headers: {"Authorization": "Bearer " + token}
-    }).then(function (r) { return r.text(); })
-      .then(function (t) { document.getElementById("out").textContent = t; });
-  </script>
-</body></html>`
-
-	mux := http.NewServeMux()
-	mux.HandleFunc("/login", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		_, _ = io.WriteString(w, page)
-	})
-	_ = mux
 }

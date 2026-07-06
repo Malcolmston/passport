@@ -8,17 +8,11 @@ import (
 	"github.com/malcolmston/passport/strategies/oauth2"
 )
 
-// ExampleNew shows the full server-side wiring for the generic OAuth2
-// authorization-code strategy, the shared base the concrete provider packages
-// build on. It registers the strategy with passport under the name "oauth2",
-// supplying the client credentials, the provider's authorization, token, and
-// userinfo URLs, the requested scopes, and a verify function that maps the
-// fetched profile to your application user. The /auth/oauth2 route begins login
-// by redirecting the browser to the provider; with no ?code= present the strategy
-// issues that redirect. The provider redirects back to /auth/oauth2/callback with
-// a code, which the strategy exchanges for an access token and uses to fetch the
-// profile before running verify. On success the callback handler runs and the
-// user is established in the session.
+// ExampleNew shows the full wiring for the generic OAuth2 authorization-code
+// strategy: register it with passport, then mount the login and
+// provider-callback routes. With no ?code= the strategy redirects the browser
+// to the provider; the provider redirects back to the callback with a code that
+// is exchanged for an access token and used to fetch the user's profile.
 func ExampleNew() {
 	p := passport.New()
 
@@ -52,23 +46,4 @@ func ExampleNew() {
 
 	// Install passport for every request, then serve.
 	log.Fatal(http.ListenAndServe(":3000", passport.Chain(mux, p.Initialize(), p.Session())))
-}
-
-// Example_frontend shows the browser side of the generic OAuth2 login. It serves
-// a page with a single "Sign in" button (an anchor) that points at the
-// application's /auth/oauth2 route. When the visitor clicks it, the passport
-// Authenticate handler mounted on that route redirects the browser onward to the
-// configured provider's authorization page. After the user approves, the provider
-// redirects back to the callback route wired in ExampleNew, which completes the
-// login. This handler renders only the generic entry-point button; the OAuth
-// redirect dance itself is handled server-side by the strategy.
-func Example_frontend() {
-	mux := http.NewServeMux()
-	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		_, _ = w.Write([]byte(`<!doctype html>
-<title>Sign in</title>
-<a href="/auth/oauth2">Sign in</a>`))
-	})
-	log.Fatal(http.ListenAndServe(":3000", mux))
 }
