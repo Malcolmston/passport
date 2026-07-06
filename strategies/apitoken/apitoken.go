@@ -1,15 +1,34 @@
-// Package apitoken authenticates requests bearing an opaque API token. The
-// token is read from the Authorization header ("Bearer <t>" or "Token <t>") or
-// from an "X-API-Token" header, and validated against a caller-supplied set.
+// Package apitoken implements opaque API-token authentication for the passport
+// port. It is a bearer-style companion to strategies/apikey and covers similar
+// ground to token variants of passport-http-bearer: a client presents a token
+// and a caller-supplied store resolves it to a user, but here the token travels
+// in the Authorization header rather than an X-API-Key header.
 //
-// Validation is constant-time: the static-token convenience path compares with
-// crypto/subtle.ConstantTimeCompare to avoid leaking the token through response
-// timing, and the ConstantTimeEqual helper is exported for Lookup
-// implementations that compare secrets themselves.
+// Use this strategy for stateless service and programmatic access when your
+// tokens are presented the way OAuth bearer tokens are — "Authorization: Bearer
+// <token>" — but are opaque secrets you issue and validate yourself rather than
+// signed JWTs. Like the other token strategies it establishes no session and is
+// typically mounted with passport.Options{Session: false}.
 //
-// This package is intentionally distinct from strategies/apikey: it takes a
-// bearer-style token (not an X-API-Key header) and its store is a Lookup
-// function returning the user directly.
+// The token is extracted from the Authorization header using either the
+// "Bearer " or "Token " scheme and, if neither is present, from a configurable
+// header that defaults to "X-API-Token". A request carrying no token fails with a
+// 401 "Bearer" challenge before any lookup runs.
+//
+// Validation supports two modes. Set Options.Lookup for a dynamic store: it
+// returns (user, ok), and ok=false (or a nil user) rejects the token. Or set
+// Options.Token together with Options.User for a single static token, which is
+// compared with crypto/subtle.ConstantTimeCompare so the check does not leak the
+// secret through response timing; the exported ConstantTimeEqual helper offers
+// the same guarantee to Lookup implementations that compare secrets themselves.
+// If both are configured, Lookup takes precedence.
+//
+// Parity: the mechanism follows the bearer-token convention of passport-http-
+// bearer but is intentionally storage-first (a Lookup returning the user
+// directly, or a constant-time static token) rather than a general verify
+// callback, and it is deliberately distinct from strategies/apikey, which reads
+// an X-API-Key header instead of an Authorization scheme. Token issuance, expiry
+// and revocation live in the caller's Lookup.
 package apitoken
 
 import (

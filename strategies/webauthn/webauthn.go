@@ -1,13 +1,50 @@
 // Package webauthn implements WebAuthn (passkey / FIDO2) authentication for
-// passport. It provides the registration and authentication ceremonies and a
-// passport.Strategy that verifies an assertion.
+// passport. It provides both ceremony halves — registration and authentication —
+// and a passport.Strategy that verifies a login assertion. It is the Go
+// counterpart to the passkey/WebAuthn strategies in the Passport.js ecosystem,
+// built entirely on the standard library (crypto, plus a small CBOR decoder) with
+// no external dependencies.
 //
-// Scope: the authentication ceremony (login) is fully verified — challenge,
-// origin, RP ID hash, user-presence flag, signature (ES256 / RS256), and the
-// signature counter. Registration parses the attestation object and extracts
-// the credential public key; attestation *statement* verification (proving the
-// authenticator model) is treated as "none", which is the common default for
-// passkeys. Store the returned Credential and look it up during authentication.
+// Reach for this package to offer passkeys: phishing-resistant, public-key
+// credentials that let users sign in with a platform authenticator (Touch ID,
+// Windows Hello, Android biometrics) or a roaming security key instead of a
+// password. Passkeys are a strong primary factor and a natural passwordless
+// replacement for username/password login, as well as a hardware-backed second
+// factor. Unlike the OAuth presets in this library there is no third-party
+// identity provider — your own site is the relying party and holds the registered
+// public keys.
+//
+// WebAuthn works as a pair of challenge-response "ceremonies" driven by the
+// browser's navigator.credentials API. To register, the server calls
+// BeginRegistration to mint a random challenge and creation options; the browser
+// runs navigator.credentials.create(), and the server verifies the result with
+// FinishRegistration, persisting the returned Credential (its id, COSE public key,
+// AAGUID, and signature counter). To authenticate, the server calls
+// BeginAuthentication to mint a fresh challenge and request options; the browser
+// runs navigator.credentials.get() and POSTs the assertion, which the Strategy
+// verifies. In both ceremonies the raw challenge must be stored server-side
+// (typically in the session) and returned during verification via the
+// ChallengeFunc.
+//
+// Verification scope and semantics: the authentication ceremony is fully verified —
+// the client-data type, challenge, and origin; the RP ID hash; the user-presence
+// flag; the assertion signature (ES256 / ECDSA-P256 or RS256); and the signature
+// counter for cloned-authenticator detection (the counter must strictly increase
+// when either side is non-zero). A Store resolves a credential id to the owning
+// user and stored Credential; implement the optional SignCountUpdater to persist
+// the advancing counter. Registration parses the attestation object and extracts
+// the credential public key, but attestation *statement* verification (proving the
+// authenticator's make/model) is treated as "none" — the common, privacy-preserving
+// default for consumer passkeys. Configure the relying party via Config (RPID,
+// RPOrigin, RPName); an empty RPOrigin skips the origin check and should be set in
+// production.
+//
+// Parity note: this package covers the mainstream passkey flows rather than the
+// full breadth of the FIDO2/WebAuthn specification. It supports the two most common
+// algorithms (ES256 and RS256), assumes attestation "none", and leaves credential
+// storage, session handling, and enrollment policy to the application. If you need
+// packed/TPM/android-key attestation verification or additional COSE algorithms,
+// extend the verification path accordingly.
 package webauthn
 
 import (

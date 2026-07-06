@@ -1,22 +1,64 @@
 // Package openidconnect implements an OpenID Connect (OIDC) authentication
-// strategy layered on top of the OAuth 2.0 authorization-code flow.
+// strategy layered on top of the OAuth 2.0 authorization-code flow. It ports
+// passport-openidconnect from the Passport.js ecosystem and, like that module,
+// is the shared base other OIDC provider presets are built on: Okta, OneLogin,
+// Azure AD, Auth0, Salesforce and similar providers are just this strategy with
+// their issuer, endpoints and JWKS URL filled in. Use it directly for any
+// standards-compliant OIDC provider, or as the foundation for a new
+// provider-specific preset.
 //
-// With no ?code in the request it redirects the user agent to the provider's
-// authorization endpoint (with a scope that includes "openid"). When the
-// provider redirects back with ?code, it exchanges the code at the token
-// endpoint, verifies the returned id_token, and reports the token's claims as
-// the authenticated user.
+// Reach for this strategy (rather than a plain OAuth2 preset) when you need the
+// identity guarantees OIDC adds on top of OAuth 2.0: a signed id_token whose
+// claims describe the authenticated end user, validated against a known issuer.
+// A plain OAuth2 login proves the app obtained an access token; OIDC proves who
+// the user is by cryptographically verifying the id_token, which is what you
+// want for single sign-on and account linking.
 //
-// id_token verification supports both modes real providers use:
+// The flow has two legs. On a request with no ?code the strategy issues a 302
+// redirect to the provider's authorization endpoint (Config.AuthURL), with a
+// scope that always includes "openid" plus any extra Config.Scopes, the client
+// ID, the redirect URI, response_type=code, and the caller-supplied state. The
+// provider authenticates the user and redirects back to Config.RedirectURL with
+// a ?code (and the same state, which the surrounding passport machinery should
+// validate for CSRF protection). On that second request the strategy exchanges
+// the code at Config.TokenURL for a token response, then verifies the returned
+// id_token before trusting any of its contents. AuthCodeURL and Exchange are
+// exported so callers can drive the two legs manually if they are not using the
+// passport middleware.
 //
-//   - RS256/ES256 via a JWKS endpoint (Google, Auth0, Okta, Azure AD, ...):
-//     set Config.JWKSURL (and optionally Config.Algorithms). Keys are fetched
-//     from the endpoint and cached, refreshing on key rotation. This is the
-//     production path.
-//   - HS256 with a shared secret (Config.JWKSecret) via strategies/jwt: handy
-//     for tests and symmetric-key setups.
+// id_token verification supports both modes real providers use, and this is the
+// security-critical part of the strategy:
+//
+//   - RS256/ES256/PS256 via a JWKS endpoint (Google, Auth0, Okta, Azure AD,
+//     ...): set Config.JWKSURL (and optionally Config.Algorithms to pin the
+//     accepted "alg" values). The provider's public signing keys are fetched
+//     from the endpoint and cached across requests, refreshing automatically on
+//     key rotation. This is the production path and is preferred.
+//   - HS256 with a shared secret (Config.JWKSecret) via strategies/jwt: convenient
+//     for tests and symmetric-key deployments, but only appropriate when the app
+//     and issuer share a secret.
 //
 // When JWKSURL is set it takes precedence; otherwise the HS256 path is used.
+// Verification checks the token signature and its time-based claims (exp/nbf via
+// strategies/jwt); a bad signature or an expired token is reported as an
+// authentication failure ("invalid_token", 401) rather than a hard error. When
+// Config.Issuer is non-empty the token's "iss" claim must match it exactly, which
+// defends against tokens minted by a different provider; a mismatch is likewise a
+// 401 failure. Note that audience ("aud") checking against the client ID is not
+// performed automatically here — enforce it in your VerifyFunc if your threat
+// model requires it.
+//
+// On success the strategy reports the authenticated user. If a VerifyFunc was
+// supplied it receives the verified claims and returns your application user;
+// returning a nil user (with a nil error) is treated as an authentication
+// failure, while a non-nil error surfaces as an internal error. If VerifyFunc is
+// nil the raw jwt.Claims are used as the user. Parity note relative to the Node
+// original: this implementation validates the id_token signature, expiry and
+// issuer, but does not implement the full optional feature set of
+// passport-openidconnect (nonce round-tripping, dynamic discovery of endpoints
+// from the issuer's /.well-known/openid-configuration document, PKCE, or
+// userinfo fetching) — endpoints are configured explicitly and the id_token
+// claims stand in for the userinfo response.
 package openidconnect
 
 import (

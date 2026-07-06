@@ -1,8 +1,36 @@
 // Package clientcert implements TLS client-certificate (mutual TLS)
-// authentication. It reads the peer's leaf certificate from the request's TLS
-// connection state and hands it to a user-supplied Verify function that maps
-// the certificate to a user (for example, by looking up its subject or
-// fingerprint). Requests without a client certificate fail.
+// authentication for the passport port, comparable to Passport.js's
+// passport-client-cert. Rather than reading a credential from the request body
+// or headers, it authenticates the client by the X.509 certificate presented
+// during the TLS handshake.
+//
+// Use it for high-assurance service-to-service calls, zero-trust internal
+// networks, and device or partner integrations where each caller holds a client
+// certificate issued by a trusted CA. It is stateless and normally mounted with
+// passport.Options{Session: false}, since the certificate re-authenticates every
+// connection.
+//
+// The strategy reads the peer's leaf certificate from r.TLS.PeerCertificates and
+// hands it to a user-supplied VerifyFunc that maps it to an application user —
+// typically by inspecting the subject common name, an email SAN, or a
+// fingerprint and looking the principal up in a directory. If the request
+// arrived without TLS or without a client certificate it fails with a 401 before
+// VerifyFunc runs.
+//
+// The VerifyFunc contract has three outcomes: a non-nil user authenticates the
+// request; (nil, nil) or (nil, ErrRejected) rejects an otherwise valid
+// certificate as an authentication failure; and (nil, err) is an internal error.
+// Crucially, cryptographic verification of the certificate chain is the TLS
+// layer's job: the server must be configured to request and verify client
+// certificates (for example a tls.Config with ClientAuth set to
+// RequireAndVerifyClientCert and an appropriate ClientCAs pool). This strategy
+// makes the authorization decision — which verified identity maps to which user —
+// not the chain validation.
+//
+// Parity: like passport-client-cert this turns a verified client certificate into
+// a user via a callback, but it relies on Go's crypto/tls for chain verification
+// and leaves certificate revocation (CRL/OCSP) and CA configuration to the
+// server's tls.Config.
 package clientcert
 
 import (

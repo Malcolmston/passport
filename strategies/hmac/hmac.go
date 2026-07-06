@@ -1,8 +1,42 @@
 // Package hmac authenticates requests by verifying an HMAC-SHA256 signature of
-// the raw request body. The signature is read from a configurable header
-// (default "X-Signature") as lowercase hex and compared in constant time
-// against a signature computed with a per-key secret. On a match the key id is
-// used as the authenticated user.
+// the raw request body. It ports the HMAC request-signing pattern seen in the
+// Passport.js ecosystem (passport-hmac) and in widely used webhook signature
+// schemes such as Stripe's and GitHub's, using only the Go standard library.
+//
+// Use this strategy to authenticate webhook deliveries and other machine-to-
+// machine POST requests where the sender and receiver share a secret and the
+// sender signs each payload. Because the signature covers the exact bytes of
+// the body, it authenticates the caller and guarantees the payload was not
+// altered in transit, without any interactive handshake or session. This makes
+// it well suited to receiving events from third-party providers that sign their
+// callbacks, or to securing internal service-to-service notifications.
+//
+// The flow reads the hex-encoded signature from the header named by
+// Options.Header (defaulting to "X-Signature") and an optional key id from
+// Options.KeyIDHeader. The key id is passed to Options.Secret to look up the
+// shared secret; when KeyIDHeader is empty the strategy verifies against
+// Secret(""). The strategy recomputes HMAC-SHA256 over the raw request body
+// with that secret, hex-encodes it, and compares it against the presented
+// signature using a constant-time comparison (hmac.Equal). A missing signature,
+// an unknown key id (Secret returns nil), or a mismatch fails the request with
+// 401; on a match the key id becomes the authenticated user available through
+// passport.User(r).
+//
+// Two details are important for correctness. First, verification is over the
+// raw, unparsed request body, so the signed bytes must be exactly what the
+// sender signed; the strategy buffers the body while reading it and restores it
+// via an io.NopCloser so downstream handlers can still read the payload.
+// Second, the secret is resolved per request through the Secret(keyID)
+// callback, which supports multiple clients and key rotation: returning nil for
+// an unrecognized key id cleanly rejects the request, and the signature
+// comparison is constant-time to avoid leaking validity through timing.
+//
+// Parity with Passport.js: like the Node HMAC strategies and provider webhook
+// verifiers, this recomputes a keyed digest of the request body and compares it
+// against a client-supplied signature, then reports the verified identity (the
+// key id) to the framework. The header names and per-key secret lookup are
+// configurable to match a given provider's signing scheme. The Strategy's
+// registered name is "hmac".
 package hmac
 
 import (

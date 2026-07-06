@@ -1,8 +1,40 @@
-// Package refreshtoken authenticates OAuth2-style refresh-token requests. The
-// refresh_token is read from the request body — either an
-// application/x-www-form-urlencoded form field or a JSON object — and validated
-// by a user-supplied Verify function. The request body is fully read and then
-// restored so downstream handlers can read it again.
+// Package refreshtoken authenticates OAuth2-style refresh-token requests, the
+// grant a client uses at a token endpoint to trade a long-lived refresh_token
+// for a fresh access token. It mirrors the server side of the OAuth 2.0
+// "refresh_token" grant (RFC 6749 section 6) rather than any single Passport.js
+// module, and complements strategies/refreshjwt: use this one when refresh
+// tokens are opaque strings tracked in your own store, and refreshjwt when they
+// are self-contained signed JWTs.
+//
+// Use this strategy on the /oauth/token (or equivalent) endpoint of an
+// authorization server or API. The client POSTs its refresh token there when its
+// access token expires; the strategy extracts and validates the token, and on
+// success the handler mints and returns a new access token (and optionally a
+// rotated refresh token). Because validation goes through a user-supplied Verify
+// function backed by your store, you can implement revocation, expiry, rotation
+// and reuse detection there — capabilities a stateless JWT cannot offer.
+//
+// The refresh_token is read from the request body in either of the two encodings
+// real OAuth clients use: an application/x-www-form-urlencoded form field named
+// "refresh_token" (selected for any non-JSON content type), or a JSON object with
+// a "refresh_token" property (selected when the Content-Type is
+// application/json). The strategy reads the body fully and then restores it (via
+// an io.NopCloser wrapper) so downstream handlers can read it again. A request
+// with no extractable token is a 401 failure ("Missing refresh token").
+//
+// The Verify function receives the raw token and returns the authenticated user.
+// Returning the sentinel ErrInvalidToken (which callers may use for an invalid,
+// expired or revoked token) is treated as a 401 authentication failure ("Invalid
+// refresh token"), as is returning a nil user with a nil error. Any other
+// non-nil error is reported as an internal error rather than a failure, so
+// transient store errors are not confused with bad credentials.
+//
+// Parity and security notes: this strategy only authenticates the presented
+// refresh token; issuing the new access token, and any rotation or one-time-use
+// enforcement, are the handler's responsibility. For rotation with reuse
+// detection, invalidate the old token in your store when a new one is issued and
+// treat a second presentation of a rotated token as a breach. Always serve the
+// token endpoint over TLS and require client authentication where appropriate.
 package refreshtoken
 
 import (

@@ -1,15 +1,42 @@
 // Package jwtbearer implements the JWT Bearer authorization grant of RFC 7523
 // ("JSON Web Token (JWT) Profile for OAuth 2.0 Client Authentication and
-// Authorization Grants") for the passport port.
+// Authorization Grants") for the passport port. It is the standard-library
+// counterpart to the Node passport-oauth2-jwt-bearer and @node-oauth JWT bearer
+// implementations, letting a client authenticate by presenting a signed JWT
+// assertion instead of a username and password.
 //
-// The client presents a signed JWT assertion in the "assertion" form field
-// (as specified by RFC 7521/7523). The assertion is verified and, on success,
-// its claims become the authenticated user.
+// Use this strategy on a token or resource endpoint that must accept RFC 7523
+// bearer assertions: server-to-server flows where one service proves its
+// identity with a JWT signed by its own key, and federated scenarios where an
+// external identity provider issues assertions that your service accepts. It
+// fits an OAuth 2.0 token endpoint receiving grant_type
+// urn:ietf:params:oauth:grant-type:jwt-bearer (exported as GrantType), and it
+// is the natural choice when credentials are asymmetric keys published as a
+// JWKS rather than shared secrets.
 //
-// Verification supports both an HS256 shared secret (Options.Secret) and, as a
-// production deployment typically requires, the issuer's published asymmetric
-// keys via a JWKS endpoint (Options.JWKSURL, RS256/ES256). When JWKSURL is set
-// it takes precedence.
+// The flow reads the assertion from the POST form field named by Options.Field
+// (defaulting to "assertion", per RFC 7521/7523), falling back to the same
+// query parameter for convenience; a missing assertion fails with 401. The
+// assertion is then verified and, on success, the verified jwt.Claims become
+// the authenticated user available through passport.User(r). A failed
+// verification is reported as the OAuth "invalid_grant" error with a 401
+// status. The companion grant_type field that a spec-compliant client also
+// sends is not required by this strategy, which keys solely on the assertion.
+//
+// Verification supports two modes and JWKSURL takes precedence. When
+// Options.JWKSURL is set, assertions are verified against the issuer's
+// published asymmetric keys (RS256/ES256), with Options.Algorithms optionally
+// restricting the accepted "alg" values — the arrangement most production
+// deployments need, since the issuer holds the private key and rotates it
+// behind the JWKS endpoint. When JWKSURL is empty, Options.Secret is used to
+// verify HS256 assertions with a symmetric shared secret, which is convenient
+// for tests and tightly coupled internal services.
+//
+// Parity with Passport.js: like the Node jwt-bearer strategies, this validates
+// an inbound JWT assertion against a configured key source and exposes the
+// verified claims to the application, implementing the RFC 7523 grant on top of
+// the same JWT verification primitives used by the jwt strategy in this module.
+// The Strategy's registered name is "jwt-bearer".
 package jwtbearer
 
 import (

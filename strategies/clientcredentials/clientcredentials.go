@@ -1,7 +1,37 @@
 // Package clientcredentials implements OAuth2 client-credentials style
-// authentication. The client_id and client_secret are read either from the HTTP
-// Basic Authorization header (RFC 6749 §2.3.1) or from the request form body,
-// and validated by a user-supplied Verify function.
+// authentication for the passport port. In the client-credentials grant (RFC
+// 6749 §4.4) there is no end user and no browser: a client application proves its
+// own identity with a client_id and client_secret. This strategy reads that pair
+// from a request and hands it to a user-supplied VerifyFunc that decides whether
+// the client is authentic.
+//
+// Use it for machine-to-machine (M2M) APIs -- a backend service, a cron job, a
+// webhook sender, or a partner integration calling your endpoints. Because there
+// is no interactive login, there is no redirect and no user-facing frontend;
+// clients simply attach their credentials to every request. Pair the strategy
+// with passport.Options{Session: false} so no session cookie is created for what
+// is inherently a stateless call.
+//
+// Credential extraction tries two locations in order. First it looks for an HTTP
+// Basic Authorization header (RFC 6749 §2.3.1), base64-decoding the
+// "id:secret" value. If that is absent, it falls back to reading client_id and
+// client_secret from the request's form body (application/x-www-form-urlencoded).
+// If neither yields a client id, the strategy fails with a "Basic" challenge and
+// HTTP 401.
+//
+// The VerifyFunc contract governs the outcome. Returning a non-nil user
+// authenticates the client and that value becomes passport.User. Returning a nil
+// user (with a nil error) rejects the request as an authentication failure,
+// responding "invalid_client" with HTTP 401; returning the ErrInvalidClient
+// sentinel does the same and is a convenient way to signal bad credentials. Any
+// other non-nil error is treated as an internal error and reported via
+// Context.Error rather than as a normal auth failure.
+//
+// Parity note: this is not a full OAuth2 authorization server -- it does not
+// issue tokens, mint JWTs, or track scopes. It authenticates the client on each
+// request from the credentials it presents, which is the piece Passport-style
+// middleware is responsible for; layer your own token issuance on top if you need
+// bearer tokens. The strategy registers under the name "client-credentials".
 package clientcredentials
 
 import (

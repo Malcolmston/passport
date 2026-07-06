@@ -1,6 +1,35 @@
-// Package basic implements HTTP Basic authentication (RFC 7617), a Go port of
-// passport-http's BasicStrategy. Credentials are read from the Authorization
-// header and validated by a user-supplied VerifyFunc.
+// Package basic implements HTTP Basic authentication (RFC 7617) for the passport
+// port. It is a Go port of the BasicStrategy from Passport.js's passport-http:
+// credentials arrive base64-encoded in the Authorization header, and a
+// user-supplied VerifyFunc maps the decoded username and password to an
+// application user.
+//
+// Basic authentication is a good fit for simple, internal, or machine-to-machine
+// endpoints, admin tools, and health/metrics routes where a browser's built-in
+// credential prompt or a scripted client (curl -u, an SDK) is acceptable.
+// Because the credentials are sent on every request it should only be used over
+// HTTPS, and it is typically mounted statelessly with
+// passport.Options{Session: false}.
+//
+// On each request the strategy parses the "Basic base64(user:pass)"
+// Authorization header. If the header is missing or malformed it fails with a
+// 401 and a WWW-Authenticate challenge of the form Basic realm="<Realm>" (the
+// Realm field, defaulting to "Users", is what browsers show in their prompt).
+// When the header parses, the decoded username and password are handed to
+// VerifyFunc.
+//
+// The VerifyFunc contract has three outcomes: a non-nil user authenticates the
+// request; (nil, nil) or (nil, ErrInvalidCredentials) is an authentication
+// failure that re-issues the Basic challenge; and (nil, err) for any other error
+// is treated as an internal error. Implementations should compare the password
+// against a stored hash (bcrypt, scrypt, argon2) rather than a plaintext value
+// and avoid leaking through timing.
+//
+// Parity: this matches passport-http's BasicStrategy for the single
+// username/password verify form and its realm-based challenge, while leaving
+// credential storage and hashing to VerifyFunc. The password-only signature and
+// HTTP Digest support from passport-http are not included; for a
+// realm-configurable variant with the same behavior see strategies/basicverify.
 package basic
 
 import (

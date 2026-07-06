@@ -1,7 +1,31 @@
-// Package bearer implements HTTP Bearer token authentication (RFC 6750), a Go
-// port of passport-http-bearer. The token is taken from the Authorization
-// header ("Bearer <token>"), the access_token form field, or the access_token
-// query parameter, and validated by a user-supplied VerifyFunc.
+// Package bearer implements HTTP Bearer token authentication (RFC 6750) for the
+// passport port. It is a Go port of passport-http-bearer: a client presents an
+// opaque access token and a user-supplied VerifyFunc resolves it to an
+// application user. It is the classic way to protect an OAuth2-style API where
+// tokens are issued elsewhere and merely validated here.
+//
+// Use it to guard API endpoints consumed by single-page apps, mobile clients or
+// other services that hold an access token. It creates no session and is
+// normally mounted with passport.Options{Session: false}; the token, not a
+// cookie, authenticates every request.
+//
+// The token is extracted, in order, from the "Authorization: Bearer <token>"
+// header, the access_token query parameter, or (for non-GET requests) the
+// access_token form field — matching the three token locations RFC 6750 defines.
+// A request with no token fails with a 401 and a Bearer realm="<Realm>"
+// challenge; the Realm field defaults to "Users".
+//
+// The VerifyFunc contract has three outcomes: a non-nil user authenticates the
+// request; (nil, nil) or (nil, ErrInvalidToken) rejects it with a Bearer
+// challenge carrying error="invalid_token"; and (nil, err) for any other error
+// is treated as an internal error. Note that the query- and form-based token
+// locations are convenient but can leak tokens into logs and referrers, so prefer
+// the header in production and always serve over HTTPS.
+//
+// Parity: this follows passport-http-bearer's extraction rules and challenge
+// format. The optional info/scope value that the Node verify callback can pass
+// alongside the user is not modeled — VerifyFunc returns just the user — and
+// token issuance, storage and expiry are left to the caller.
 package bearer
 
 import (

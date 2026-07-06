@@ -1,6 +1,36 @@
-// Package twitch provides a passport OAuth2 strategy preset for the Twitch
-// identity provider, wrapping strategies/oauth2 with the provider's public
-// authorization, token and userinfo endpoints.
+// Package twitch provides a Passport strategy preset for signing users in with
+// Twitch using OAuth 2.0. It is the Go port of the passport-twitch-new strategy from the
+// Passport.js ecosystem, and is a thin configuration wrapper over
+// strategies/oauth2 that hard-codes Twitch's authorization and token endpoints
+// so that callers only supply their client credentials and a verify callback.
+//
+// Reach for this package when you want a "Sign in with Twitch" button in a
+// net/http server without hand-rolling the OAuth 2.0 authorization-code dance.
+// Twitch is a live-streaming platform. Because it delegates to strategies/oauth2, it behaves identically to
+// every other provider preset in this library, so switching identity providers
+// is close to a one-line change.
+//
+// Authentication is the standard OAuth 2.0 authorization-code flow split across
+// two routes. The login route calls Authenticate, which issues a 302 redirect
+// to Twitch's authorization endpoint carrying the client id, the requested
+// scopes, the registered callback URL, and an opaque single-use state value for
+// CSRF protection. After the user consents, Twitch redirects back to the
+// callback route with an authorization code; the strategy exchanges that code
+// at the token endpoint, fetches the profile from the userinfo endpoint, and then invokes the verify callback.
+//
+// The verify callback receives an oauth2.Profile and returns the application
+// user to log in, or a nil user to reject the login. The redirect URL passed to
+// New must exactly match one registered in your Twitch application settings, or
+// the callback will be refused by the provider. The requested scopes default to user:read:email, which determine what the resulting access token can read. The state
+// parameter is generated and validated automatically, so a missing or mismatched
+// state fails the callback. The user:read:email scope is needed for the user's email address to be returned in the profile.
+//
+// Parity with the Node original is limited to endpoint configuration and the
+// verify-callback shape: as with passport-twitch-new, you register the strategy, expose a
+// login route and a callback route, and map the provider profile to a user.
+// Profile field population depends on Twitch's response and this library's
+// oauth2.Profile mapping, which may normalize fewer fields than the Node
+// strategy's provider-specific profile parser.
 package twitch
 
 import "github.com/malcolmston/passport/strategies/oauth2"
