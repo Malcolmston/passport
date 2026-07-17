@@ -13,18 +13,22 @@ export const LIB: Lib = {
   id: "passport", name: "Passport", icon: '<i class="fa-solid fa-shield-halved"></i>', accent: "#7ee787",
   pkg: "github.com/malcolmston/passport", node: "jaredhanson/passport",
   repo: "https://github.com/malcolmston/passport", docs: "https://malcolmston.github.io/passport/",
-  tagline: "Simple, unobtrusive authentication.",
-  blurb: "A strategy-based auth middleware for net/http. 100+ strategies — local, basic, bearer, JWT, OAuth2 with " +
-    "60+ providers, WebAuthn passkeys, and OpenID Connect with RS256/JWKS — plus session serialize/deserialize.",
-  tags: ["100+ strategies", "OAuth2", "WebAuthn", "JWT / JWKS", "OIDC", "sessions"],
+  tagline: "Simple, unobtrusive authentication for net/http.",
+  blurb: "A strategy-based authentication middleware for net/http, ported from Passport.js. 104 interchangeable " +
+    "strategies — local, basic, bearer, API-key, JWT/JWKS, TOTP/HOTP, magic-link, WebAuthn passkeys, SAML, OpenID " +
+    "Connect, and OAuth 2.0 across 67 providers — behind one small Strategy contract. Session " +
+    "SerializeUser/DeserializeUser with a pluggable Store, or run stateless. Standard library only, no dependencies.",
+  tags: ["104 strategies", "OAuth 2.0", "67 providers", "WebAuthn", "JWT / JWKS", "OIDC", "SAML", "sessions", "stdlib-only"],
   features: [
-    "Strategy interface with <code>Success / Fail / Redirect / Error / Pass</code>",
-    "Local, Basic, Bearer, API-key, HMAC, TOTP/HOTP, magic-link, client-cert …",
-    "OAuth2 base + 60+ providers: Google, GitHub, Facebook, Slack, Discord, Apple …",
-    "OpenID Connect id_tokens verified via <b>RS256/ES256 JWKS</b> (Google, Auth0, Okta, Azure)",
-    "WebAuthn / passkeys (CBOR + COSE, ES256/RS256 assertions)",
-    "Session <code>SerializeUser</code> / <code>DeserializeUser</code>, pluggable <code>Store</code>",
-    "<code>RequireLogin</code> gate, custom callbacks, multi-strategy, <code>passReq</code>"
+    "Small <code>Strategy</code> contract: report <code>Success</code> / <code>Fail</code> / <code>Redirect</code> / <code>Error</code> / <code>Pass</code> on a <code>*Context</code>",
+    "Credentials: <code>local</code>, <code>basic</code>, <code>digest</code>, <code>bearer</code>, <code>apikey</code>, <code>hmac</code>, <code>clientcert</code>, <code>ldap</code>, <code>cas</code>",
+    "One-time &amp; tokenized: <code>totp</code>, <code>hotp</code>, <code>magiclink</code>, <code>jwt</code>, <code>jwtbearer</code>, <code>signedtoken</code>, <code>remembercookie</code>",
+    "OAuth 2.0 base plus 67 providers — <code>google</code>, <code>github</code>, <code>facebook</code>, <code>slack</code>, <code>discord</code>, <code>apple</code>, <code>microsoft</code> …",
+    "OpenID Connect id_tokens verified against rotating <b>RS256/ES256 JWKS</b> — <code>auth0</code>, <code>okta</code>, <code>azuread</code>, <code>cognito</code>",
+    "WebAuthn / passkeys with stdlib CBOR + COSE (ES256/RS256 assertions), plus <code>saml</code> and <code>openidconnect</code>",
+    "Sessions via <code>SerializeUser</code> / <code>DeserializeUser</code> and a pluggable <code>Store</code> (<code>MemoryStore</code> default), or <code>Options{Session:false}</code> for stateless APIs",
+    "<code>Authenticate</code> / <code>RequireLogin</code> guards, <code>AuthenticateCallback</code>, <code>AuthenticateAny</code> multi-strategy, request-aware <code>custom.New</code> verifiers",
+    "Familiar Passport.js API — <code>Use</code>, <code>LogIn</code> / <code>LogOut</code>, <code>User</code>, <code>IsAuthenticated</code> — standard library only"
   ],
   node_code:
 `const passport = require('passport')
