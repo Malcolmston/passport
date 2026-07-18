@@ -1,0 +1,20 @@
+package uber
+
+import "testing"
+
+func TestName(t *testing.T) {
+	s := New("id", "secret", "https://app.example/callback", nil)
+	if s.Name() != "uber" {
+		t.Fatalf("Name() = %q, want %q", s.Name(), "uber")
+	}
+}
+
+func TestEndpoints(t *testing.T) {
+	s := New("id", "secret", "https://app.example/callback", nil)
+	if s.AuthURL() != "https://login.uber.com/oauth/v2/authorize" {
+		t.Errorf("AuthURL() = %q, want %q", s.AuthURL(), "https://login.uber.com/oauth/v2/authorize")
+	}
+	if s.TokenURL() != "https://login.uber.com/oauth/v2/token" {
+		t.Errorf("TokenURL() = %q, want %q", s.TokenURL(), "https://login.uber.com/oauth/v2/token")
+	}
+}

@@ -1,0 +1,20 @@
+package wechat
+
+import "testing"
+
+func TestName(t *testing.T) {
+	s := New("id", "secret", "https://app.example/callback", nil)
+	if s.Name() != "wechat" {
+		t.Fatalf("Name() = %q, want %q", s.Name(), "wechat")
+	}
+}
+
+func TestEndpoints(t *testing.T) {
+	s := New("id", "secret", "https://app.example/callback", nil)
+	if s.AuthURL() != "https://open.weixin.qq.com/connect/qrconnect" {
+		t.Errorf("AuthURL() = %q, want %q", s.AuthURL(), "https://open.weixin.qq.com/connect/qrconnect")
+	}
+	if s.TokenURL() != "https://api.weixin.qq.com/sns/oauth2/access_token" {
+		t.Errorf("TokenURL() = %q, want %q", s.TokenURL(), "https://api.weixin.qq.com/sns/oauth2/access_token")
+	}
+}
