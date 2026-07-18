@@ -1,0 +1,20 @@
+package typeform
+
+import "testing"
+
+func TestName(t *testing.T) {
+	s := New("id", "secret", "https://app.example/callback", nil)
+	if s.Name() != "typeform" {
+		t.Fatalf("Name() = %q, want %q", s.Name(), "typeform")
+	}
+}
+
+func TestEndpoints(t *testing.T) {
+	s := New("id", "secret", "https://app.example/callback", nil)
+	if s.AuthURL() != "https://api.typeform.com/oauth/authorize" {
+		t.Errorf("AuthURL() = %q, want %q", s.AuthURL(), "https://api.typeform.com/oauth/authorize")
+	}
+	if s.TokenURL() != "https://api.typeform.com/oauth/token" {
+		t.Errorf("TokenURL() = %q, want %q", s.TokenURL(), "https://api.typeform.com/oauth/token")
+	}
+}
