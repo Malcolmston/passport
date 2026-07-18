@@ -23,6 +23,13 @@ type Passport struct {
 	deserialize DeserializeFunc
 	sessions    *sessionManager
 	userKey     string // session key under which the serialized user id is stored
+
+	// Multi-layer chains mirroring Passport.js's Authenticator. They are empty
+	// by default; the single serialize/deserialize functions above remain the
+	// common path. See serde.go.
+	serializers      []Serializer
+	deserializers    []Deserializer
+	infoTransformers []InfoTransformer
 }
 
 // New creates a Passport backed by an in-memory session store. Configure it
@@ -36,9 +43,15 @@ func New() *Passport {
 }
 
 // Use registers a strategy under its default Name(). It returns the Passport for
-// chaining.
+// chaining. Like Passport.js, which throws "Authentication strategies must have
+// a name", Use panics when the strategy reports an empty Name(); register such a
+// strategy with UseNamed instead.
 func (p *Passport) Use(s Strategy) *Passport {
-	return p.UseNamed(s.Name(), s)
+	name := s.Name()
+	if name == "" {
+		panic("passport: Authentication strategies must have a name")
+	}
+	return p.UseNamed(name, s)
 }
 
 // UseNamed registers a strategy under an explicit name, allowing the same

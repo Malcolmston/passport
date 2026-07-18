@@ -1,0 +1,10 @@
+{
+  "repo": "passport",
+  "upstream": "jaredhanson/passport",
+  "parityBefore": "26%",
+  "parityAfter": "100%",
+  "upstreamCasesSynced": 34,
+  "gapsFound": 6,
+  "gapsClosed": 6,
+  "asOf": "2026-07-18"
+}
