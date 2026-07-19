@@ -105,10 +105,14 @@ func (k Key) URL() string {
 		v.Set("period", strconv.Itoa(k.period()))
 	}
 	u := url.URL{
-		Scheme:   "otpauth",
-		Host:     string(k.Type),
-		Path:     "/" + k.Label(),
-		RawQuery: v.Encode(),
+		Scheme: "otpauth",
+		Host:   string(k.Type),
+		Path:   "/" + k.Label(),
+		// url.Values.Encode encodes spaces as "+", but the Key Uri Format is
+		// canonically "%20" in the query too; some authenticator apps render a
+		// literal "+" verbatim. Encode escapes any literal "+" as "%2B", so
+		// every "+" it emits is a space and this replacement is lossless.
+		RawQuery: strings.ReplaceAll(v.Encode(), "+", "%20"),
 	}
 	return u.String()
 }
