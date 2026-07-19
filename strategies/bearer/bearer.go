@@ -50,55 +50,102 @@ type Strategy struct {
 	// Realm is reported in the WWW-Authenticate challenge on failure.
 	Realm string
 
+	// Scope, when non-empty, is advertised in the WWW-Authenticate challenge
+	// as scope="<space-joined>", indicating the scope required to access the
+	// protected resource (RFC 6750 §3).
+	Scope []string
+
 	verify VerifyFunc
 }
 
-// New creates a bearer Strategy.
+// New creates a bearer Strategy. It panics if verify is nil, matching
+// passport-http-bearer, which throws "HTTPBearerStrategy requires a verify
+// function".
 func New(verify VerifyFunc) *Strategy {
+	if verify == nil {
+		panic("bearer: New requires a verify function")
+	}
 	return &Strategy{Realm: "Users", verify: verify}
 }
 
 // Name returns "bearer".
 func (s *Strategy) Name() string { return "bearer" }
 
-// Authenticate implements passport.Strategy.
+// Authenticate implements passport.Strategy. It mirrors passport-http-bearer's
+// token extraction: at most one of the Authorization header, the access_token
+// body parameter, or the access_token query parameter may carry the token.
+// Presenting a Bearer header without a token, or a token in more than one
+// location, is a malformed request and fails with HTTP 400.
 func (s *Strategy) Authenticate(c *passport.Context, r *http.Request) {
-	token := extractToken(r)
+	var token string
+
+	if h := r.Header.Get("Authorization"); h != "" {
+		parts := strings.Split(h, " ")
+		if len(parts) == 2 {
+			if strings.EqualFold(parts[0], "Bearer") {
+				token = parts[1]
+			}
+		} else {
+			c.Fail("", http.StatusBadRequest)
+			return
+		}
+	}
+
+	if bt := bodyToken(r); bt != "" {
+		if token != "" {
+			c.Fail("", http.StatusBadRequest)
+			return
+		}
+		token = bt
+	}
+
+	if qt := r.URL.Query().Get("access_token"); qt != "" {
+		if token != "" {
+			c.Fail("", http.StatusBadRequest)
+			return
+		}
+		token = qt
+	}
+
 	if token == "" {
-		c.Fail("Bearer realm=\""+s.Realm+"\"", http.StatusUnauthorized)
+		c.Fail(s.challenge(""), http.StatusUnauthorized)
 		return
 	}
+
 	user, err := s.verify(token)
 	if err != nil {
 		if errors.Is(err, ErrInvalidToken) {
-			c.Fail("Bearer realm=\""+s.Realm+"\", error=\"invalid_token\"", http.StatusUnauthorized)
+			c.Fail(s.challenge("invalid_token"), http.StatusUnauthorized)
 			return
 		}
 		c.Error(err)
 		return
 	}
 	if user == nil {
-		c.Fail("Bearer realm=\""+s.Realm+"\", error=\"invalid_token\"", http.StatusUnauthorized)
+		c.Fail(s.challenge("invalid_token"), http.StatusUnauthorized)
 		return
 	}
 	c.Success(user)
 }
 
-func extractToken(r *http.Request) string {
-	if h := r.Header.Get("Authorization"); h != "" {
-		if len(h) > 7 && strings.EqualFold(h[:7], "bearer ") {
-			return strings.TrimSpace(h[7:])
-		}
+// challenge builds the WWW-Authenticate value, mirroring the upstream
+// _challenge() helper: realm, then optional scope, then optional error code.
+func (s *Strategy) challenge(code string) string {
+	ch := `Bearer realm="` + s.Realm + `"`
+	if len(s.Scope) > 0 {
+		ch += `, scope="` + strings.Join(s.Scope, " ") + `"`
 	}
-	if t := r.URL.Query().Get("access_token"); t != "" {
-		return t
+	if code != "" {
+		ch += `, error="` + code + `"`
 	}
-	if r.Method != http.MethodGet {
-		if err := r.ParseForm(); err == nil {
-			if t := r.PostFormValue("access_token"); t != "" {
-				return t
-			}
-		}
+	return ch
+}
+
+// bodyToken returns the access_token from a form-encoded request body only
+// (never the query string), matching upstream's req.body.access_token check.
+func bodyToken(r *http.Request) string {
+	if err := r.ParseForm(); err != nil {
+		return ""
 	}
-	return ""
+	return r.PostForm.Get("access_token")
 }
