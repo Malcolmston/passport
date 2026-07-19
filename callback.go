@@ -57,6 +57,8 @@ func (p *Passport) AuthenticateCallback(name string, cb func(w http.ResponseWrit
 // strategy has not been registered.
 type unknownStrategyError struct{ name string }
 
+// Error implements the error interface, reporting that the named strategy
+// requested during authentication has not been registered.
 func (e *unknownStrategyError) Error() string {
 	return "passport: unknown strategy \"" + e.name + "\""
 }
