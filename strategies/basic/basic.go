@@ -72,6 +72,13 @@ func (s *Strategy) Authenticate(c *passport.Context, r *http.Request) {
 		c.Fail("Basic realm=\""+s.Realm+"\"", http.StatusUnauthorized)
 		return
 	}
+	// Parity with passport-http: credentials lacking a username or a password
+	// fail with the challenge without invoking the verify callback
+	// (upstream: `if (!userid || !password) return this.fail(this._challenge())`).
+	if username == "" || password == "" {
+		c.Fail("Basic realm=\""+s.Realm+"\"", http.StatusUnauthorized)
+		return
+	}
 	user, err := s.verify(username, password)
 	if err != nil {
 		if errors.Is(err, ErrInvalidCredentials) {
