@@ -6,6 +6,30 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+## [0.4.0] - 2026-08-11
+### Security
+- **HTTP Digest `uri` is bound to the request target (GHSA-p8f3-4jp3-4pp2, high).**
+  The `uri` field was hashed into the response digest but never compared with the
+  actual request path, so one captured header authenticated every route reachable
+  by the same method. Mismatches now return 400.
+- **`WWW-Authenticate` is emitted only for genuine HTTP-auth challenges.** The
+  local strategy leaked a challenge header on failure.
+- Basic and Digest now distinguish 400 (malformed header) from 401
+  (missing/rejected credentials), matching upstream.
+
+### Changed
+- Measured parity against Passport.js raised from 66.2% to 100% of compared cases
+  (72/74), plus nested `httpauth`, `pkce`, `otpauth` and `pwhash` harnesses at
+  100%. Four further fixes where the port accepted input the RFC rejects: a
+  realm-less digest credential, HTAB as a scheme separator, a non-base32 OTP
+  secret, and an `otpauth://hotp/` URI with no counter.
+
+### Breaking
+- `Options.Session` is now `*bool` (nil = enabled, matching Passport's
+  `session: true` default). Previously the Go zero value silently disabled the
+  session, so `Options{SuccessRedirect: "/"}` logged nobody in. Use `NoSession()`
+  to opt out.
 ### Fixed
 - Cross-language parity with upstream `passport` / `passport-http` /
   `passport-http-bearer` (harness `parity/passport/`) raised from 66.2% to 100%
