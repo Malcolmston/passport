@@ -251,8 +251,9 @@ type DigestCredentials struct {
 }
 
 // ParseDigest parses a full "Digest ..." Authorization header value. It returns
-// ErrWrongScheme for a header using another scheme, and ErrMalformed when the
-// mandatory username, nonce, uri or response parameters are missing.
+// ErrWrongScheme for a header using another scheme, and ErrMalformed when any of
+// the parameters RFC 7616 Section 3.4 makes REQUIRED — username, realm, nonce,
+// uri, response — is missing or empty.
 func ParseDigest(header string) (DigestCredentials, error) {
 	scheme, rest, err := ParseScheme(header)
 	if err != nil {
@@ -276,7 +277,11 @@ func ParseDigest(header string) (DigestCredentials, error) {
 		Userhash:  strings.EqualFold(p["userhash"], "true"),
 		Params:    p,
 	}
-	if c.Username == "" || c.Nonce == "" || c.URI == "" || c.Response == "" {
+	// RFC 7616 Section 3.4 makes username, realm, nonce, uri and response all
+	// REQUIRED in the credentials. realm in particular is load-bearing: it is
+	// hashed into HA1, so a server that accepts a realm-less credential is
+	// verifying a digest over a protection space the client never named.
+	if c.Username == "" || c.Realm == "" || c.Nonce == "" || c.URI == "" || c.Response == "" {
 		return DigestCredentials{}, ErrMalformed
 	}
 	return c, nil

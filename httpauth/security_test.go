@@ -5,8 +5,9 @@ import (
 	"testing"
 )
 
-// TestParseSchemeSeparators covers the RFC 7235 rule that one or more spaces or
-// tabs may separate the scheme from the credentials, plus the malformed cases.
+// TestParseSchemeSeparators covers the RFC 7235 Section 2.1 rule that one or
+// more SP characters — and only SP — separate the scheme from the credentials,
+// plus the malformed cases.
 func TestParseSchemeSeparators(t *testing.T) {
 	cases := []struct {
 		name       string
@@ -17,7 +18,7 @@ func TestParseSchemeSeparators(t *testing.T) {
 	}{
 		{"single space", "Basic dXNlcjpwdw==", "Basic", "dXNlcjpwdw==", nil},
 		{"multiple spaces", "Basic   dXNlcjpwdw==", "Basic", "dXNlcjpwdw==", nil},
-		{"tab separator", "Basic\tdXNlcjpwdw==", "Basic", "dXNlcjpwdw==", nil},
+		{"tab separator", "Basic\tdXNlcjpwdw==", "", "", ErrMalformed},
 		{"leading and trailing space", "  Bearer tok  ", "Bearer", "tok", nil},
 		{"empty", "", "", "", ErrNoHeader},
 		{"whitespace only", " \t ", "", "", ErrNoHeader},
@@ -209,6 +210,9 @@ func TestParseDigestRejectsIncomplete(t *testing.T) {
 		`Digest username="u"`,
 		`Digest username="u", nonce="n"`,
 		`Digest username="u", nonce="n", uri="/"`,
+		// realm is REQUIRED by RFC 7616 Section 3.4 and is hashed into HA1.
+		`Digest username="u", nonce="n", uri="/", response="r"`,
+		`Digest username="u", realm="", nonce="n", uri="/", response="r"`,
 	} {
 		if creds, err := ParseDigest(header); err == nil {
 			t.Errorf("ParseDigest(%q) unexpectedly succeeded with %+v", header, creds)

@@ -162,6 +162,12 @@ func Parse(raw string) (Key, error) {
 	if k.Secret == "" {
 		return Key{}, fmt.Errorf("otpauth: missing secret")
 	}
+	// The secret is the whole credential, so a URI carrying one that is not
+	// decodable base32 is rejected here rather than accepted and then failing
+	// later inside Code, where the caller has already stored the enrollment.
+	if _, err := DecodeSecret(k.Secret); err != nil {
+		return Key{}, err
+	}
 	label := strings.TrimPrefix(u.Path, "/")
 	if i := strings.Index(label, ":"); i >= 0 {
 		issuer := strings.TrimSpace(label[:i])
@@ -189,10 +195,15 @@ func Parse(raw string) (Key, error) {
 		k.Digits = 6
 	}
 	if typ == HOTP {
-		if c := q.Get("counter"); c != "" {
-			if k.Counter, err = strconv.ParseUint(c, 10, 64); err != nil {
-				return Key{}, fmt.Errorf("otpauth: invalid counter %q", c)
-			}
+		// The Key Uri Format makes counter REQUIRED for hotp: without it there
+		// is no shared starting point, and silently assuming 0 would hand the
+		// server a moving factor the authenticator app never agreed to.
+		c := q.Get("counter")
+		if c == "" {
+			return Key{}, fmt.Errorf("otpauth: hotp URI is missing the required counter parameter")
+		}
+		if k.Counter, err = strconv.ParseUint(c, 10, 64); err != nil {
+			return Key{}, fmt.Errorf("otpauth: invalid counter %q", c)
 		}
 	} else {
 		if p := q.Get("period"); p != "" {

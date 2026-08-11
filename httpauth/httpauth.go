@@ -38,16 +38,22 @@ const (
 // the remaining credentials, without interpreting the credentials. The scheme
 // is returned as written (callers should compare case-insensitively).
 //
-// Per RFC 7235 the scheme and credentials are separated by one or more spaces
-// or horizontal tabs, so "Basic  dXNlcjpwdw" and "Basic\tdXNlcjpwdw" parse the
-// same as the single-space form. A header with no separator, or with an empty
-// credentials part, is ErrMalformed; an empty header is ErrNoHeader.
+// Per RFC 7235 Section 2.1 the scheme and credentials are separated by one or
+// more SP characters — "Basic  dXNlcjpwdw" parses the same as the single-space
+// form — and by nothing else: a horizontal tab is not a legal separator, so
+// "Basic\tdXNlcjpwdw" is ErrMalformed. Being lenient there would only create a
+// parser differential with the proxies and gateways in front of the
+// application, which follow the grammar. Surrounding whitespace on the field
+// value itself is insignificant per RFC 7230 and is trimmed.
+//
+// A header with no separator, or with an empty credentials part, is
+// ErrMalformed; an empty header is ErrNoHeader.
 func ParseScheme(header string) (scheme, rest string, err error) {
 	header = strings.Trim(header, " \t")
 	if header == "" {
 		return "", "", ErrNoHeader
 	}
-	i := strings.IndexAny(header, " \t")
+	i := strings.IndexByte(header, ' ')
 	if i < 0 {
 		return "", "", ErrMalformed
 	}

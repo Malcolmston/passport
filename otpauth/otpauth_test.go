@@ -81,6 +81,11 @@ func TestParseErrors(t *testing.T) {
 		"https://totp/foo?secret=ABC",
 		"otpauth://unknown/foo?secret=ABC",
 		"otpauth://totp/foo",
+		// The secret is the credential: a value that is not decodable base32
+		// must be refused at the boundary, not stored and failed later.
+		"otpauth://totp/foo?secret=not-base32!!",
+		// The Key Uri Format makes counter REQUIRED for hotp.
+		"otpauth://hotp/foo?secret=JBSWY3DPEHPK3PXP",
 	}
 	for _, c := range cases {
 		if _, err := Parse(c); err == nil {
