@@ -56,7 +56,7 @@ the standard library. Each documents this in its package doc comment:
 | Strategy | Simplification |
 | -------- | -------------- |
 | `openidconnect`, `googleidtoken`, `jwtbearer` | verify id_token/assertion as **HS256** shared-secret rather than RS256/JWKS |
-| `saml` | parses `SAMLResponse` and extracts `NameID` but performs **no signature validation** — wiring/testing only, not production-secure |
+| `saml` | validates the enveloped XML signature (exc-c14n / C14N 1.0, RSA-PKCS1v15, RSA-PSS, ECDSA; SHA-1 rejected by default), status, conditions, audience, recipient/destination and assertion replay; **encrypted assertions, multi-assertion responses, AuthnRequest signing, SLO and metadata parsing are not supported and are rejected** |
 | `ldap` | no network bind; delegates to a caller-supplied `Bind(dn, password)` integration point |
 | `cas` | CAS 2.0 `serviceValidate` flow; no proxy tickets |
 | `oauth1` | signing/flow complete; access-token exchange uses an empty token secret (request-token secret needs session storage) |

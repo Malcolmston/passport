@@ -86,7 +86,9 @@ type Options struct {
 	// CodeField names the form/query field carrying the submitted code.
 	// Defaults to "code".
 	CodeField string
-	// Window is the number of counter values to look ahead. Defaults to 3.
+	// Window is the number of counter values to look ahead. Zero selects the
+	// default of 3; any negative value disables the look-ahead entirely, so
+	// only the code for the exact stored counter is accepted.
 	Window int
 }
 
@@ -116,6 +118,11 @@ func New(opts Options) *Strategy {
 	}
 	if s.window == 0 {
 		s.window = 3
+	} else if s.window < 0 {
+		// A negative window would make the verification loop below run zero
+		// times, silently rejecting every code. Read it as the strict setting
+		// the caller presumably wanted: the stored counter only.
+		s.window = 0
 	}
 	return s
 }

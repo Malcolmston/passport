@@ -7,8 +7,12 @@
 //	GET  /idp/sso       mock IdP: authenticates and auto-POSTs a SAMLResponse
 //	POST /acs           Assertion Consumer Service — the saml strategy runs here
 //
-// SECURITY: the saml strategy performs NO signature validation. A production SP
-// MUST verify the XML digital signature before trusting the assertion.
+// SECURITY: the bundled mock IdP does not sign its responses, so this demo sets
+// saml.Options.InsecureSkipSignatureValidation, which turns off signature,
+// status, conditions and replay validation entirely. That flag must never be
+// set in a real service. A production SP configures Options.IdPCertificates,
+// Options.Audience and Options.AssertionConsumerServiceURL instead, and then
+// every response is signature-checked by default.
 package main
 
 import (
@@ -71,6 +75,10 @@ func main() {
 		Verify: func(nameID string) (any, error) {
 			return map[string]string{"email": nameID}, nil
 		},
+		// DEMO ONLY — see the SECURITY note at the top of this file. Without
+		// this the strategy rejects the mock IdP's unsigned response, which
+		// is exactly what it should do.
+		InsecureSkipSignatureValidation: true,
 	}))
 	p.SerializeUser(func(u any) (string, error) { return u.(map[string]string)["email"], nil })
 	p.DeserializeUser(func(id string, _ *http.Request) (any, error) {

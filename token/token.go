@@ -15,7 +15,9 @@ package token
 
 import (
 	"crypto/rand"
+	"crypto/sha256"
 	"crypto/subtle"
+	"encoding/base32"
 	"encoding/base64"
 	"encoding/hex"
 	"fmt"
@@ -102,4 +104,47 @@ func Numeric(n int) (string, error) {
 // checking a secret.
 func Equal(a, b string) bool {
 	return subtle.ConstantTimeCompare([]byte(a), []byte(b)) == 1
+}
+
+// Base32 returns a random token of n bytes of entropy encoded as unpadded,
+// upper-case RFC 4648 base32. Base32 avoids the visually confusable pairs that
+// trip people up when reading a code aloud or typing it from a screen, and it
+// is the encoding authenticator apps expect for shared OTP secrets.
+func Base32(n int) (string, error) {
+	b, err := Bytes(n)
+	if err != nil {
+		return "", err
+	}
+	return base32.StdEncoding.WithPadding(base32.NoPadding).EncodeToString(b), nil
+}
+
+// EqualBytes reports whether a and b are the same token using a constant-time
+// comparison. It is the []byte counterpart of Equal, for callers holding raw
+// token bytes rather than an encoded string.
+func EqualBytes(a, b []byte) bool {
+	return subtle.ConstantTimeCompare(a, b) == 1
+}
+
+// Hash returns the SHA-256 digest of a token, hex-encoded.
+//
+// Store this instead of the token itself. A token is a bearer credential, so a
+// database that holds them in the clear hands an attacker who reads it every
+// live session; storing only the digest means a leaked table cannot be replayed.
+// On each request, hash the presented token and look up (or compare with
+// Equal) the digest.
+//
+// A plain digest is the right tool here and a password hash is not: tokens from
+// this package carry at least 128 bits of entropy, so there is nothing to brute
+// force, and the deliberate slowness of bcrypt or argon2 would only add latency
+// to every authenticated request. Do not use Hash for user-chosen passwords,
+// which have far less entropy and do need a slow, salted KDF.
+func Hash(token string) string {
+	sum := sha256.Sum256([]byte(token))
+	return hex.EncodeToString(sum[:])
+}
+
+// Verify reports whether a presented token matches a stored SHA-256 digest as
+// produced by Hash, comparing in constant time.
+func Verify(presented, storedHash string) bool {
+	return Equal(Hash(presented), storedHash)
 }

@@ -11,7 +11,7 @@
 // session. It is a natural fit for single-page-app and mobile back ends, internal
 // service-to-service calls, and short-lived signed links. Because verification is
 // stateless it scales horizontally with no shared session store; the only shared
-// state required is the HMAC secret. Pair it with passport.Options{Session: false}
+// state required is the HMAC secret. Pair it with passport.Options{Session: passport.NoSession()}
 // when you want purely stateless request authentication with no cookie.
 //
 // The token is a compact two-part string:

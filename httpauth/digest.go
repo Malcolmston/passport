@@ -9,6 +9,7 @@ import (
 	"crypto/md5"
 	"crypto/sha256"
 	"crypto/sha512"
+	"crypto/subtle"
 	"encoding/hex"
 	"errors"
 	"hash"
@@ -178,4 +179,140 @@ func unquote(s string) string {
 		b.WriteByte(s[i])
 	}
 	return b.String()
+}
+
+// DigestChallengeParams describes the WWW-Authenticate challenge a server sends
+// to start a Digest exchange (RFC 7616 Section 3.3). Only Realm and Nonce are
+// required; the remaining fields are omitted from the rendered header when
+// empty.
+type DigestChallengeParams struct {
+	Realm     string // protection space shown in the client's credential prompt
+	Nonce     string // server nonce; must be unpredictable and single-use
+	Opaque    string // opaque value the client echoes back unchanged
+	Algorithm string // AlgMD5, AlgSHA256, AlgSHA512_256, optionally "-sess"
+	QOP       string // quality of protection, e.g. "auth" or "auth,auth-int"
+	Domain    string // space-separated URIs the credentials are valid for
+	Stale     bool   // true when the previous nonce merely expired
+	Charset   string // e.g. "UTF-8"
+	Userhash  bool   // true when the server accepts a hashed username
+}
+
+// DigestChallenge renders p as a WWW-Authenticate header value. All values are
+// emitted as quoted-strings via QuoteString except "stale" and "userhash",
+// which RFC 7616 defines as unquoted booleans, so a caller-supplied realm or
+// nonce cannot inject additional header content.
+func DigestChallenge(p DigestChallengeParams) string {
+	var b strings.Builder
+	b.WriteString(SchemeDigest)
+	sep := " "
+	add := func(k, v string) {
+		if v == "" {
+			return
+		}
+		b.WriteString(sep + k + "=" + QuoteString(v))
+		sep = ", "
+	}
+	// Field order follows passport-http / RFC 7616 Section 3.3
+	// (realm, domain, nonce, opaque, algorithm, qop) so the rendered challenge
+	// is byte-identical to the upstream oracle's.
+	add("realm", p.Realm)
+	add("domain", p.Domain)
+	add("nonce", p.Nonce)
+	add("opaque", p.Opaque)
+	add("algorithm", p.Algorithm)
+	add("qop", p.QOP)
+	add("charset", p.Charset)
+	if p.Stale {
+		b.WriteString(sep + "stale=true")
+		sep = ", "
+	}
+	if p.Userhash {
+		b.WriteString(sep + "userhash=true")
+	}
+	return b.String()
+}
+
+// DigestCredentials is a parsed "Authorization: Digest ..." header.
+type DigestCredentials struct {
+	Username  string
+	Realm     string
+	Nonce     string
+	URI       string
+	Response  string
+	Algorithm string
+	CNonce    string
+	Opaque    string
+	QOP       string
+	NC        string
+	Userhash  bool
+	// Params holds every auth-param as parsed, keyed by lower-cased name, so
+	// extensions this struct does not model remain reachable.
+	Params map[string]string
+}
+
+// ParseDigest parses a full "Digest ..." Authorization header value. It returns
+// ErrWrongScheme for a header using another scheme, and ErrMalformed when the
+// mandatory username, nonce, uri or response parameters are missing.
+func ParseDigest(header string) (DigestCredentials, error) {
+	scheme, rest, err := ParseScheme(header)
+	if err != nil {
+		return DigestCredentials{}, err
+	}
+	if !strings.EqualFold(scheme, SchemeDigest) {
+		return DigestCredentials{}, ErrWrongScheme
+	}
+	p := ParseParams(rest)
+	c := DigestCredentials{
+		Username:  p["username"],
+		Realm:     p["realm"],
+		Nonce:     p["nonce"],
+		URI:       p["uri"],
+		Response:  p["response"],
+		Algorithm: p["algorithm"],
+		CNonce:    p["cnonce"],
+		Opaque:    p["opaque"],
+		QOP:       p["qop"],
+		NC:        p["nc"],
+		Userhash:  strings.EqualFold(p["userhash"], "true"),
+		Params:    p,
+	}
+	if c.Username == "" || c.Nonce == "" || c.URI == "" || c.Response == "" {
+		return DigestCredentials{}, ErrMalformed
+	}
+	return c, nil
+}
+
+// VerifyDigest recomputes the expected response digest for c using method (the
+// HTTP request method), password (the user's cleartext password) and body (only
+// consulted when c.QOP is "auth-int"), then compares it against the presented
+// c.Response in constant time.
+//
+// It reports false — rather than an error — for an unsupported algorithm, so a
+// caller can treat every rejection identically. The caller remains responsible
+// for checking that c.Nonce is one this server issued and has not already seen
+// at this nonce-count; without that bookkeeping Digest offers no replay
+// protection.
+func VerifyDigest(c DigestCredentials, method, password string, body []byte) bool {
+	expected, err := DigestResponse(DigestParams{
+		Method:    method,
+		URI:       c.URI,
+		Username:  c.Username,
+		Realm:     c.Realm,
+		Password:  password,
+		Nonce:     c.Nonce,
+		NC:        c.NC,
+		CNonce:    c.CNonce,
+		QOP:       c.QOP,
+		Algorithm: c.Algorithm,
+		Body:      body,
+	})
+	if err != nil {
+		return false
+	}
+	// Digest responses are hex, which servers and clients disagree about the
+	// case of; compare case-insensitively but still in constant time.
+	return subtle.ConstantTimeCompare(
+		[]byte(strings.ToLower(expected)),
+		[]byte(strings.ToLower(c.Response)),
+	) == 1
 }

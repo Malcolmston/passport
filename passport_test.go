@@ -163,7 +163,7 @@ func TestStatelessAuthenticate(t *testing.T) {
 		w.Write([]byte("hi " + passport.User(r).(string)))
 	})
 	// Session disabled: no cookie, purely per-request.
-	h := p.Authenticate("token", passport.Options{Session: false})(protected)
+	h := p.Authenticate("token", passport.Options{Session: passport.NoSession()})(protected)
 	app := passport.Chain(h, p.Initialize())
 
 	r := httptest.NewRequest("GET", "/", nil)
@@ -190,5 +190,7 @@ func (t *tokenStrategy) Authenticate(c *passport.Context, r *http.Request) {
 		c.Success(name)
 		return
 	}
-	c.Fail("invalid token", http.StatusUnauthorized)
+	// This strategy advertises an HTTP WWW-Authenticate challenge, so it uses
+	// FailWithChallenge (not Fail, whose challenge is a plain message).
+	c.FailWithChallenge("invalid token", http.StatusUnauthorized)
 }

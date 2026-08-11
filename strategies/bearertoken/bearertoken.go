@@ -9,7 +9,7 @@
 // whether they are still active, rather than by verifying a self-contained
 // signature (for which a JWT strategy is more appropriate). It suits API gateways
 // and resource servers in an OAuth2 deployment; like the other token strategies
-// it is stateless and typically mounted with passport.Options{Session: false}.
+// it is stateless and typically mounted with passport.Options{Session: passport.NoSession()}.
 //
 // On each request the strategy requires a well-formed "Bearer " Authorization
 // header. If the header is absent, uses a different scheme, or carries an empty

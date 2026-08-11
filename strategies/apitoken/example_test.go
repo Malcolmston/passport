@@ -14,7 +14,7 @@ import (
 // presented token to a user with a constant-time comparison (for a single fixed
 // token, set Options.Token and Options.User instead). The strategy registers
 // under the name "api-token" (its Name()), so that is the name passed to
-// Authenticate, and it is mounted with passport.Options{Session: false} because
+// Authenticate, and it is mounted with passport.Options{Session: passport.NoSession()} because
 // tokens are stateless. On each request the token is read from the Authorization
 // header ("Bearer <t>" or "Token <t>") or the configured "X-API-Token" header,
 // and only a successful lookup lets the protected handler run. A client
@@ -45,7 +45,7 @@ func ExampleNew() {
 
 	mux := http.NewServeMux()
 	// Tokens are stateless: skip session creation on success.
-	mux.Handle("/private", p.Authenticate("api-token", passport.Options{Session: false})(protected))
+	mux.Handle("/private", p.Authenticate("api-token", passport.Options{Session: passport.NoSession()})(protected))
 
 	log.Fatal(http.ListenAndServe(":3000", passport.Chain(mux, p.Initialize(), p.Session())))
 }

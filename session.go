@@ -82,7 +82,7 @@ func newSessionManager(store Store) *sessionManager {
 		store:      store,
 		cookieName: DefaultCookieName,
 		httpOnly:   true,
-		sameSite:   http.SameSite(http.SameSiteLaxMode),
+		sameSite:   http.SameSiteLaxMode,
 	}
 }
 
@@ -171,11 +171,20 @@ func (s *session) save(w http.ResponseWriter) error {
 }
 
 // destroy removes the session and clears the client cookie.
+//
+// The in-memory session is reset to a pristine, brand-new state: dropping the
+// id is what prevents a later save() (from any handler that touches the session
+// after logout) from writing the cleared data back under the destroyed id and
+// re-issuing the very cookie we just expired. Clearing dirty ensures such a
+// save is a no-op unless the caller sets something new.
 func (s *session) destroy(w http.ResponseWriter) {
 	if s.id != "" {
 		s.mgr.store.Destroy(s.id)
 	}
+	s.id = ""
 	s.data = map[string]any{}
+	s.dirty = false
+	s.isNew = true
 	http.SetCookie(w, &http.Cookie{
 		Name:     s.mgr.cookieName,
 		Value:    "",

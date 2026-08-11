@@ -8,7 +8,7 @@
 // tokens are presented the way OAuth bearer tokens are — "Authorization: Bearer
 // <token>" — but are opaque secrets you issue and validate yourself rather than
 // signed JWTs. Like the other token strategies it establishes no session and is
-// typically mounted with passport.Options{Session: false}.
+// typically mounted with passport.Options{Session: passport.NoSession()}.
 //
 // The token is extracted from the Authorization header using either the
 // "Bearer " or "Token " scheme and, if neither is present, from a configurable

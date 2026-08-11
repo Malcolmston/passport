@@ -16,7 +16,7 @@ import (
 // server-side session or database. On a valid token the decoded claims map
 // becomes the authenticated user, which the protected handler reads with
 // passport.User. Chain installs passport for every request; for a purely
-// stateless API you could additionally pass passport.Options{Session: false} to
+// stateless API you could additionally pass passport.Options{Session: passport.NoSession()} to
 // Authenticate so no cookie is set.
 //
 // A client supplies the token in the Authorization header as a bearer token:

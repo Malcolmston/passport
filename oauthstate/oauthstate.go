@@ -24,6 +24,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -51,13 +52,33 @@ type Store interface {
 }
 
 // GenerateNonce returns a URL-safe random string built from 16 bytes of
-// entropy, suitable as an OAuth state value or general CSRF token.
+// entropy, suitable as an OAuth state value or general CSRF token. The bytes
+// come from crypto/rand, and a failure of the system random source is returned
+// as an error rather than yielding a guessable value.
 func GenerateNonce() (string, error) {
-	buf := make([]byte, 16)
+	return GenerateNonceWithLength(16)
+}
+
+// GenerateNonceWithLength returns a URL-safe random string built from n bytes
+// of entropy. n must be positive; 16 bytes (128 bits) is the practical minimum
+// for a CSRF token and is what GenerateNonce uses.
+func GenerateNonceWithLength(n int) (string, error) {
+	if n <= 0 {
+		return "", fmt.Errorf("oauthstate: nonce entropy must be positive, got %d", n)
+	}
+	buf := make([]byte, n)
 	if _, err := rand.Read(buf); err != nil {
 		return "", fmt.Errorf("oauthstate: reading random source: %w", err)
 	}
 	return base64.RawURLEncoding.EncodeToString(buf), nil
+}
+
+// Equal reports whether two state values are identical, comparing them in
+// constant time. Use it when checking a returned state against one you kept
+// yourself rather than against a Store, so the comparison cannot be used as a
+// byte-at-a-time guessing oracle.
+func Equal(a, b string) bool {
+	return subtle.ConstantTimeCompare([]byte(a), []byte(b)) == 1
 }
 
 type stateEntry struct {
@@ -74,6 +95,7 @@ type MemoryStore struct {
 
 	mu      sync.Mutex
 	entries map[string]stateEntry
+	issued  uint64
 }
 
 // NewMemoryStore returns a MemoryStore whose issued states expire after ttl. A
@@ -86,7 +108,16 @@ func NewMemoryStore(ttl time.Duration) *MemoryStore {
 	}
 }
 
+// sweepEvery is how many Issue calls may pass between the automatic sweeps
+// that keep an abandoned-callback workload from growing the map without bound.
+const sweepEvery = 64
+
 // Issue generates a nonce, stores payload against it, and returns the nonce.
+//
+// Most issued states are never redeemed — users abandon consent screens — so
+// every sweepEvery calls Issue also drops the entries whose TTL has elapsed.
+// Without that, a store with a TTL would still grow forever under normal
+// traffic. Callers that want a predictable schedule can drive Sweep themselves.
 func (s *MemoryStore) Issue(payload string) (string, error) {
 	nonce, err := GenerateNonce()
 	if err != nil {
@@ -98,8 +129,35 @@ func (s *MemoryStore) Issue(payload string) (string, error) {
 	}
 	s.mu.Lock()
 	s.entries[nonce] = stateEntry{payload: payload, expires: exp}
+	s.issued++
+	sweep := s.ttl > 0 && s.issued%sweepEvery == 0
+	if sweep {
+		s.sweepLocked()
+	}
 	s.mu.Unlock()
 	return nonce, nil
+}
+
+// Sweep discards every issued-but-unconsumed state whose TTL has elapsed and
+// reports how many were removed. It is safe to call concurrently and is a no-op
+// for a store created with a non-positive ttl, whose states never expire.
+func (s *MemoryStore) Sweep() int {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.sweepLocked()
+}
+
+// sweepLocked drops expired entries. The caller must hold s.mu.
+func (s *MemoryStore) sweepLocked() int {
+	now := s.now()
+	n := 0
+	for k, e := range s.entries {
+		if !e.expires.IsZero() && now.After(e.expires) {
+			delete(s.entries, k)
+			n++
+		}
+	}
+	return n
 }
 
 // Verify consumes state, returning the payload that was stored with it. It
@@ -140,6 +198,13 @@ type HMACStore struct {
 // NewHMACStore returns an HMACStore that signs with key. If ttl is positive,
 // Verify rejects states older than ttl. The key should be at least 32 bytes of
 // unpredictable data.
+//
+// Because verification is stateless there is nothing to consume, so a valid
+// state can be replayed until it expires. That is enough for CSRF protection —
+// an attacker still cannot mint a state — but it is weaker than MemoryStore's
+// exactly-once semantics. Keep ttl short (minutes), and prefer MemoryStore when
+// single use matters. A non-positive ttl disables the expiry check entirely and
+// should be avoided.
 func NewHMACStore(key []byte, ttl time.Duration) *HMACStore {
 	dup := make([]byte, len(key))
 	copy(dup, key)
@@ -159,7 +224,7 @@ func (s *HMACStore) Issue(payload string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	ts := fmt.Sprintf("%d", s.now().Unix())
+	ts := strconv.FormatInt(s.now().Unix(), 10)
 	body := strings.Join([]string{
 		nonce,
 		base64.RawURLEncoding.EncodeToString([]byte(ts)),
@@ -190,8 +255,10 @@ func (s *HMACStore) Verify(state string) (string, error) {
 		return "", ErrUnknownState
 	}
 	if s.ttl > 0 {
-		var unix int64
-		if _, err := fmt.Sscanf(string(tsRaw), "%d", &unix); err != nil {
+		// strconv, not fmt.Sscanf: Sscanf("12x", "%d") succeeds and silently
+		// ignores the trailing bytes, so a malformed timestamp would pass.
+		unix, err := strconv.ParseInt(string(tsRaw), 10, 64)
+		if err != nil {
 			return "", ErrUnknownState
 		}
 		if s.now().Sub(time.Unix(unix, 0)) > s.ttl {

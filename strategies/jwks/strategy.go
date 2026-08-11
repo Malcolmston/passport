@@ -5,8 +5,10 @@
 package jwks
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
+	"io"
 	"net/http"
 	"strings"
 	"sync"
@@ -43,29 +45,79 @@ type Options struct {
 	// CacheTTL bounds how long fetched keys are reused before a forced refresh
 	// (default 1 hour).
 	CacheTTL time.Duration
+	// MaxRefreshesPerMinute caps how many times the JWKS document may be
+	// fetched in any one-minute window (default
+	// DefaultMaxRefreshesPerMinute).
+	//
+	// Seeing an unknown "kid" triggers a refetch, because that is how key
+	// rotation is picked up promptly. But the kid comes from an
+	// unauthenticated token header, so without a cap anyone can turn each
+	// request they send into an outbound fetch — using this server to hammer
+	// the provider's JWKS endpoint, and stalling its own request handlers
+	// behind those fetches. Once the budget for the current window is spent,
+	// an unknown kid is reported as ErrKey against the cached set until the
+	// window rolls over. This mirrors the jwksRequestsPerMinute rate limit in
+	// Node's jwks-rsa.
+	//
+	// Set it to a negative value to allow unthrottled refetching.
+	MaxRefreshesPerMinute int
 	// HTTPClient fetches the JWKS document (default http.DefaultClient).
 	HTTPClient *http.Client
+	// MaxJWKSBytes caps the size of the JWKS document that will be read
+	// (default DefaultMaxJWKSBytes), so a hostile or misbehaving endpoint
+	// cannot exhaust memory with an endless response body.
+	MaxJWKSBytes int64
+	// FetchTimeout bounds a single JWKS fetch (default DefaultFetchTimeout).
+	// It applies only when HTTPClient has no timeout of its own.
+	FetchTimeout time.Duration
 	// TokenFromParam, when true, reads the token from the "id_token" or
 	// "access_token" query/form field instead of the Authorization: Bearer
 	// header (the default).
 	TokenFromParam bool
 }
 
+// Defaults applied by New for the corresponding zero-valued Options fields.
+const (
+	// DefaultCacheTTL is how long fetched keys are reused before a refresh.
+	DefaultCacheTTL = time.Hour
+	// DefaultMaxRefreshesPerMinute throttles unknown-kid refetches. Ten per
+	// minute is the same budget Node's jwks-rsa uses by default: ample for
+	// real key rotation, which happens on the order of days, while capping the
+	// outbound traffic an unauthenticated caller can induce.
+	DefaultMaxRefreshesPerMinute = 10
+	// DefaultMaxJWKSBytes caps the JWKS response body. Real key sets are a few
+	// kilobytes; 1 MiB leaves ample headroom.
+	DefaultMaxJWKSBytes int64 = 1 << 20
+	// DefaultFetchTimeout bounds a single JWKS fetch.
+	DefaultFetchTimeout = 10 * time.Second
+)
+
 // Strategy authenticates a request carrying a JWT verified against a JWKS.
 type Strategy struct {
 	opts   Options
 	verify VerifyFunc
 
-	mu        sync.Mutex
-	cached    *Set
-	fetchedAt time.Time
+	mu          sync.Mutex
+	cached      *Set
+	fetchedAt   time.Time
+	windowStart time.Time
+	windowCount int
 }
 
 // New creates a JWKS-backed strategy. verify may be nil, in which case the raw
 // Claims become the authenticated user.
 func New(opts Options, verify VerifyFunc) *Strategy {
 	if opts.CacheTTL == 0 {
-		opts.CacheTTL = time.Hour
+		opts.CacheTTL = DefaultCacheTTL
+	}
+	if opts.MaxRefreshesPerMinute == 0 {
+		opts.MaxRefreshesPerMinute = DefaultMaxRefreshesPerMinute
+	}
+	if opts.MaxJWKSBytes == 0 {
+		opts.MaxJWKSBytes = DefaultMaxJWKSBytes
+	}
+	if opts.FetchTimeout == 0 {
+		opts.FetchTimeout = DefaultFetchTimeout
 	}
 	if opts.HTTPClient == nil {
 		opts.HTTPClient = http.DefaultClient
@@ -145,22 +197,54 @@ func (s *Strategy) resolver() KeyResolver {
 	}
 }
 
-// keyFromEndpoint returns a key for kid from the cached JWKS, refetching once if
-// the kid is unknown or the cache has expired.
+// refreshAllowedLocked reports whether another JWKS fetch fits in the current
+// one-minute budget, consuming a slot when it does. The caller must hold s.mu.
+func (s *Strategy) refreshAllowedLocked(now time.Time) bool {
+	if s.opts.MaxRefreshesPerMinute <= 0 {
+		return true
+	}
+	if s.windowStart.IsZero() || now.Sub(s.windowStart) >= time.Minute {
+		s.windowStart = now
+		s.windowCount = 0
+	}
+	if s.windowCount >= s.opts.MaxRefreshesPerMinute {
+		return false
+	}
+	s.windowCount++
+	return true
+}
+
+// keyFromEndpoint returns a key for kid from the cached JWKS, refetching if the
+// kid is unknown or the cache has expired — but no more often than
+// Options.MaxRefreshesPerMinute, so an unauthenticated caller cannot drive
+// unbounded outbound fetches by sending tokens with made-up kids.
 func (s *Strategy) keyFromEndpoint(kid string) (any, error) {
 	if s.opts.JWKSURL == "" {
 		return nil, ErrKey
 	}
+	now := time.Now()
+
 	s.mu.Lock()
 	set := s.cached
-	stale := set == nil || time.Since(s.fetchedAt) > s.opts.CacheTTL
-	s.mu.Unlock()
-
+	stale := set == nil || now.Sub(s.fetchedAt) > s.opts.CacheTTL
 	if !stale {
 		if key, err := set.Key(kid); err == nil {
+			s.mu.Unlock()
 			return key, nil
 		}
 		// Unknown kid — keys may have rotated; fall through to a refetch.
+	}
+	allowed := s.refreshAllowedLocked(now)
+	s.mu.Unlock()
+
+	if !allowed {
+		// Out of refresh budget. Answer from whatever is cached rather than
+		// issuing another fetch; with no cache at all there is nothing to do
+		// but reject.
+		if set != nil {
+			return set.Key(kid)
+		}
+		return nil, ErrKey
 	}
 
 	fresh, err := s.fetch()
@@ -178,12 +262,22 @@ func (s *Strategy) keyFromEndpoint(kid string) (any, error) {
 	return fresh.Key(kid)
 }
 
-// fetch downloads and parses the JWKS document.
+// fetch downloads and parses the JWKS document. The request is bounded by
+// Options.FetchTimeout and the response body by Options.MaxJWKSBytes, so a slow
+// or endlessly streaming endpoint cannot pin a request handler or exhaust
+// memory.
 func (s *Strategy) fetch() (*Set, error) {
-	req, err := http.NewRequest(http.MethodGet, s.opts.JWKSURL, nil)
+	ctx := context.Background()
+	if s.opts.FetchTimeout > 0 {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(ctx, s.opts.FetchTimeout)
+		defer cancel()
+	}
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, s.opts.JWKSURL, nil)
 	if err != nil {
 		return nil, err
 	}
+	req.Header.Set("Accept", "application/json")
 	resp, err := s.opts.HTTPClient.Do(req)
 	if err != nil {
 		return nil, err
@@ -192,8 +286,12 @@ func (s *Strategy) fetch() (*Set, error) {
 	if resp.StatusCode != http.StatusOK {
 		return nil, errors.New("jwks: fetch returned status " + resp.Status)
 	}
+	var body io.Reader = resp.Body
+	if s.opts.MaxJWKSBytes > 0 {
+		body = io.LimitReader(resp.Body, s.opts.MaxJWKSBytes)
+	}
 	var set Set
-	if err := json.NewDecoder(resp.Body).Decode(&set); err != nil {
+	if err := json.NewDecoder(body).Decode(&set); err != nil {
 		return nil, err
 	}
 	return &set, nil

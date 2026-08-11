@@ -40,6 +40,14 @@ var (
 	ErrUnknownAlgorithm = errors.New("pwhash: unknown hash algorithm")
 )
 
+// MaxIterations is the largest iteration count Decode will accept. Encoded
+// hashes are attacker-influenced whenever they reach the process from an
+// untrusted store or a copied credential file, and PBKDF2's cost is linear in
+// the iteration count, so an unbounded value would let a single Verify call
+// pin a CPU indefinitely. The bound is far above any realistic parameter
+// choice (DefaultParams uses 600,000).
+const MaxIterations = 100_000_000
+
 // Algorithm names the HMAC hash underlying a PBKDF2 derivation.
 type Algorithm string
 
@@ -69,7 +77,19 @@ func (a Algorithm) newHash() (func() hash.Hash, int, bool) {
 // iter iterations of HMAC using the hash constructed by h. It is a direct
 // implementation of the algorithm in RFC 2898 section 5.2 and matches the
 // RFC 6070 test vectors for HMAC-SHA1.
+//
+// keyLen values <= 0 yield an empty key rather than panicking, and iter values
+// < 1 are clamped to the RFC's minimum of one iteration. Callers deriving
+// password hashes should use Hash/HashWithParams, which pick safe parameters;
+// Key is exported for callers that need raw PBKDF2 (for example to match an
+// existing hash format).
 func Key(password, salt []byte, iter, keyLen int, h func() hash.Hash) []byte {
+	if keyLen <= 0 {
+		return []byte{}
+	}
+	if iter < 1 {
+		iter = 1
+	}
 	prf := hmac.New(h, password)
 	hLen := prf.Size()
 	numBlocks := (keyLen + hLen - 1) / hLen
@@ -169,6 +189,12 @@ func encode(alg Algorithm, iter int, salt, dk []byte) string {
 
 // Decode parses an encoded pwhash string into its parameters and raw bytes. It
 // returns ErrInvalidHash or ErrUnknownAlgorithm on malformed input.
+//
+// Decode is strict on purpose: an encoding whose salt or derived key is empty,
+// whose iteration count is not in [1, MaxIterations], or that carries trailing
+// junk is rejected outright rather than being verified against. A hash with an
+// empty derived key would otherwise match every password, so this validation is
+// load-bearing for Verify's correctness, not merely cosmetic.
 func Decode(encoded string) (alg Algorithm, iterations int, salt, dk []byte, err error) {
 	parts := strings.Split(encoded, "$")
 	if len(parts) != 4 || !strings.HasPrefix(parts[0], "pbkdf2_") {
@@ -179,7 +205,7 @@ func Decode(encoded string) (alg Algorithm, iterations int, salt, dk []byte, err
 		return "", 0, nil, nil, ErrUnknownAlgorithm
 	}
 	iterations, err = strconv.Atoi(parts[1])
-	if err != nil || iterations <= 0 {
+	if err != nil || iterations <= 0 || iterations > MaxIterations {
 		return "", 0, nil, nil, ErrInvalidHash
 	}
 	if salt, err = base64.RawStdEncoding.DecodeString(parts[2]); err != nil {
@@ -188,18 +214,55 @@ func Decode(encoded string) (alg Algorithm, iterations int, salt, dk []byte, err
 	if dk, err = base64.RawStdEncoding.DecodeString(parts[3]); err != nil {
 		return "", 0, nil, nil, ErrInvalidHash
 	}
+	// A zero-length salt defeats the point of salting, and a zero-length
+	// derived key compares equal to every candidate. Neither is producible by
+	// HashWithParams, so both indicate corruption or tampering.
+	if len(salt) == 0 || len(dk) == 0 {
+		return "", 0, nil, nil, ErrInvalidHash
+	}
 	return alg, iterations, salt, dk, nil
 }
 
 // Verify reports whether password matches the given encoded hash. The
 // comparison of derived keys is constant-time. A malformed encoding returns a
-// non-nil error and a false result.
+// non-nil error and a false result; callers must treat a non-nil error as a
+// failed login and never fall through to success.
 func Verify(password, encoded string) (bool, error) {
 	alg, iter, salt, dk, err := Decode(encoded)
 	if err != nil {
 		return false, err
 	}
+	// Decode guarantees len(dk) > 0; re-checking keeps the invariant local so a
+	// future change to Decode cannot silently reintroduce a match-anything hash
+	// (ConstantTimeCompare reports equality for two empty slices).
+	if len(dk) == 0 {
+		return false, ErrInvalidHash
+	}
 	h, _, _ := alg.newHash()
 	computed := Key([]byte(password), salt, iter, len(dk), h)
 	return subtle.ConstantTimeCompare(computed, dk) == 1, nil
+}
+
+// NeedsRehash reports whether an encoded hash was produced with weaker
+// parameters than want, meaning the stored credential should be re-derived the
+// next time the plaintext password is available (i.e. immediately after a
+// successful Verify). It mirrors the upgrade hook password libraries expose —
+// Django's check_password/must_update and PHP's password_needs_rehash — and
+// lets a deployment raise its iteration count without forcing a reset.
+//
+// A hash that cannot be decoded needs rehashing by definition, so NeedsRehash
+// returns true for malformed input.
+func NeedsRehash(encoded string, want Params) bool {
+	want, _, err := want.resolve()
+	if err != nil {
+		return true
+	}
+	alg, iter, salt, dk, err := Decode(encoded)
+	if err != nil {
+		return true
+	}
+	return alg != want.Algorithm ||
+		iter < want.Iterations ||
+		len(salt) < want.SaltLength ||
+		len(dk) < want.KeyLength
 }

@@ -94,7 +94,7 @@ func (p *Passport) AuthenticateAny(names []string, opts ...Options) Middleware {
 						st.user = c.user
 						st.authed = true
 					}
-					if o.Session {
+					if o.useSession() {
 						if err := p.LogIn(w, r, c.user); err != nil {
 							http.Error(w, err.Error(), http.StatusInternalServerError)
 							return
@@ -144,7 +144,7 @@ func (p *Passport) AuthenticateAny(names []string, opts ...Options) Middleware {
 			if o.FailureMessage && challenge != "" {
 				msg = challenge
 			}
-			if challenge != "" {
+			if last != nil && last.www && challenge != "" && status == http.StatusUnauthorized {
 				w.Header().Set("WWW-Authenticate", challenge)
 			}
 			http.Error(w, msg, status)

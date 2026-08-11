@@ -34,7 +34,7 @@ func TestBearerStrategy(t *testing.T) {
 		}
 		return nil, bearer.ErrInvalidToken
 	}))
-	app := guardedApp(p, "bearer", passport.Options{Session: false})
+	app := guardedApp(p, "bearer", passport.Options{Session: passport.NoSession()})
 
 	// Valid token.
 	r := httptest.NewRequest("GET", "/", nil)
@@ -61,7 +61,7 @@ func TestBasicStrategy(t *testing.T) {
 		}
 		return nil, basic.ErrInvalidCredentials
 	}))
-	app := guardedApp(p, "basic", passport.Options{Session: false})
+	app := guardedApp(p, "basic", passport.Options{Session: passport.NoSession()})
 
 	r := httptest.NewRequest("GET", "/", nil)
 	r.Header.Set("Authorization", "Basic "+base64.StdEncoding.EncodeToString([]byte("admin:s3cret")))
@@ -90,7 +90,7 @@ func TestJWTStrategy(t *testing.T) {
 	p.Use(jwt.New(secret, func(claims jwt.Claims) (any, error) {
 		return claims.Subject(), nil
 	}))
-	app := guardedApp(p, "jwt", passport.Options{Session: false})
+	app := guardedApp(p, "jwt", passport.Options{Session: passport.NoSession()})
 
 	// Valid, unexpired token.
 	token, err := jwt.Sign(secret, jwt.Claims{
@@ -143,7 +143,7 @@ func TestAnonymousStrategyPasses(t *testing.T) {
 	p := passport.New()
 	p.Use(anonymous.New())
 	// With Pass(), Authenticate falls through to the next handler unauthenticated.
-	app := guardedApp(p, "anonymous", passport.Options{Session: false})
+	app := guardedApp(p, "anonymous", passport.Options{Session: passport.NoSession()})
 	w := httptest.NewRecorder()
 	app.ServeHTTP(w, httptest.NewRequest("GET", "/", nil))
 	if w.Code != 200 || w.Body.String() != "user:" {

@@ -12,7 +12,7 @@ import (
 // ExampleNew shows the full backend wiring for HTTP Bearer token authentication
 // (RFC 6750). It registers the strategy with a VerifyFunc that resolves a
 // presented token to a user, then mounts it on "/private" with
-// passport.Options{Session: false} because bearer tokens are stateless. On each
+// passport.Options{Session: passport.NoSession()} because bearer tokens are stateless. On each
 // request the token is taken from the "Authorization: Bearer <token>" header, the
 // access_token query parameter, or the access_token form field, and only a
 // successful Verify lets the protected handler run. Returning bearer.ErrInvalidToken
@@ -40,7 +40,7 @@ func ExampleNew() {
 
 	mux := http.NewServeMux()
 	// Bearer tokens are stateless: skip session creation on success.
-	mux.Handle("/private", p.Authenticate("bearer", passport.Options{Session: false})(protected))
+	mux.Handle("/private", p.Authenticate("bearer", passport.Options{Session: passport.NoSession()})(protected))
 
 	log.Fatal(http.ListenAndServe(":3000", passport.Chain(mux, p.Initialize(), p.Session())))
 }

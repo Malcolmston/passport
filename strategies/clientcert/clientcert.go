@@ -7,7 +7,7 @@
 // Use it for high-assurance service-to-service calls, zero-trust internal
 // networks, and device or partner integrations where each caller holds a client
 // certificate issued by a trusted CA. It is stateless and normally mounted with
-// passport.Options{Session: false}, since the certificate re-authenticates every
+// passport.Options{Session: passport.NoSession()}, since the certificate re-authenticates every
 // connection.
 //
 // The strategy reads the peer's leaf certificate from r.TLS.PeerCertificates and

@@ -13,7 +13,7 @@ import (
 // registers the strategy with passport, configuring the header ("X-API-Key"), a
 // fallback query parameter ("api_key"), and a Verify func that resolves a
 // presented key to a user. The strategy is then mounted on the "/private" route
-// with passport.Options{Session: false}, because API keys are stateless and
+// with passport.Options{Session: passport.NoSession()}, because API keys are stateless and
 // should not open a cookie session. On each request the key is read from the
 // header (or the query parameter), and only a successful Verify lets the
 // protected handler run. A client authenticates by presenting the key:
@@ -43,7 +43,7 @@ func ExampleNew() {
 
 	mux := http.NewServeMux()
 	// API keys are stateless: skip session creation on success.
-	mux.Handle("/private", p.Authenticate("apikey", passport.Options{Session: false})(protected))
+	mux.Handle("/private", p.Authenticate("apikey", passport.Options{Session: passport.NoSession()})(protected))
 
 	log.Fatal(http.ListenAndServe(":3000", passport.Chain(mux, p.Initialize(), p.Session())))
 }

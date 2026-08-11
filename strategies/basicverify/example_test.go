@@ -41,7 +41,7 @@ func ExampleNew() {
 
 	mux := http.NewServeMux()
 	// Basic is stateless: skip session creation on success.
-	mux.Handle("/private", p.Authenticate("basic-verify", passport.Options{Session: false})(protected))
+	mux.Handle("/private", p.Authenticate("basic-verify", passport.Options{Session: passport.NoSession()})(protected))
 
 	log.Fatal(http.ListenAndServe(":3000", passport.Chain(mux, p.Initialize(), p.Session())))
 }

@@ -91,7 +91,9 @@ type Options struct {
 	// Defaults to "code".
 	CodeField string
 	// Skew is the number of time steps checked on either side of the current
-	// step. Defaults to 1.
+	// step. Zero selects the default of 1 (the previous, current, and next
+	// 30-second windows); any negative value means no tolerance at all, so
+	// only the code for the current step is accepted.
 	Skew int
 	// Now returns the current time; defaults to time.Now. Injected for tests.
 	Now func() time.Time
@@ -123,6 +125,12 @@ func New(opts Options) *Strategy {
 	}
 	if s.skew == 0 {
 		s.skew = 1
+	} else if s.skew < 0 {
+		// A negative skew would make the verification loop below run zero
+		// times, silently rejecting every code — a misconfiguration that looks
+		// exactly like "the secret is wrong". Read it as the strict setting the
+		// caller presumably wanted: current step only.
+		s.skew = 0
 	}
 	if s.now == nil {
 		s.now = time.Now

@@ -6,7 +6,7 @@
 //
 // Use it to guard API endpoints consumed by single-page apps, mobile clients or
 // other services that hold an access token. It creates no session and is
-// normally mounted with passport.Options{Session: false}; the token, not a
+// normally mounted with passport.Options{Session: passport.NoSession()}; the token, not a
 // cookie, authenticates every request.
 //
 // The token is extracted, in order, from the "Authorization: Bearer <token>"
@@ -108,21 +108,21 @@ func (s *Strategy) Authenticate(c *passport.Context, r *http.Request) {
 	}
 
 	if token == "" {
-		c.Fail(s.challenge(""), http.StatusUnauthorized)
+		c.FailWithChallenge(s.challenge(""), http.StatusUnauthorized)
 		return
 	}
 
 	user, err := s.verify(token)
 	if err != nil {
 		if errors.Is(err, ErrInvalidToken) {
-			c.Fail(s.challenge("invalid_token"), http.StatusUnauthorized)
+			c.FailWithChallenge(s.challenge("invalid_token"), http.StatusUnauthorized)
 			return
 		}
 		c.Error(err)
 		return
 	}
 	if user == nil {
-		c.Fail(s.challenge("invalid_token"), http.StatusUnauthorized)
+		c.FailWithChallenge(s.challenge("invalid_token"), http.StatusUnauthorized)
 		return
 	}
 	c.Success(user)

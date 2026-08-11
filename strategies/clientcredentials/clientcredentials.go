@@ -9,7 +9,7 @@
 // webhook sender, or a partner integration calling your endpoints. Because there
 // is no interactive login, there is no redirect and no user-facing frontend;
 // clients simply attach their credentials to every request. Pair the strategy
-// with passport.Options{Session: false} so no session cookie is created for what
+// with passport.Options{Session: passport.NoSession()} so no session cookie is created for what
 // is inherently a stateless call.
 //
 // Credential extraction tries two locations in order. First it looks for an HTTP

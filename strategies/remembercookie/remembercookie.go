@@ -6,8 +6,9 @@
 //
 // Use this strategy alongside your primary login. When a user checks a "remember
 // me" box, you generate a fresh token (a random selector plus a random
-// validator), store the selector together with a hash of the validator keyed to
-// the user, and set a persistent cookie holding "selector:validator". On a later
+// validator), store the selector together with the validator — or, better, its
+// digest; see Options.Hash below — keyed to the user, and set a persistent
+// cookie holding "selector:validator". On a later
 // visit with no active session, this strategy consults that cookie to
 // re-establish the login. It is intentionally non-fatal when absent: with no
 // remember cookie the strategy calls Pass() so the request continues as an
@@ -17,20 +18,38 @@
 // The selector is the lookup key and the validator is the secret. On each request
 // the strategy splits the cookie at the first ':'; a value with no ':' is a 401
 // failure ("Malformed cookie"). It then calls the LookupFunc with the selector,
-// which returns the associated user and the stored token hash. An unknown
-// selector (nil user or empty hash) is a 401 failure ("Invalid token"), and any
-// error from the lookup is reported as an internal error. The presented validator
-// is compared against the stored hash using crypto/subtle constant-time
-// comparison to avoid leaking timing information; only an exact match yields
-// Success.
+// which returns the associated user and the stored token value. An unknown
+// selector (nil user or empty value) is a 401 failure ("Invalid token"), and any
+// error from the lookup is reported as an internal error. The presented
+// validator — passed through Options.Hash first, when one is set — is compared
+// against that stored value using crypto/subtle constant-time comparison to
+// avoid leaking timing information; only an exact match yields Success.
 //
 // The selector/validator split is what makes the scheme safe: the selector is
 // used for the database lookup (so lookups are not vulnerable to timing attacks),
-// while the validator is the actual secret and is only ever stored hashed. This
-// also lets you revoke a single remembered device by deleting its selector row,
-// and mitigates theft by rotating the validator on each use. Options.Secret is
-// accepted for API symmetry with the other strategies (for callers that
-// additionally sign the cookie) but is not required by the core comparison.
+// while the validator is the actual secret. This also lets you revoke a single
+// remembered device by deleting its selector row, and mitigates theft by
+// rotating the validator on each use. Options.Secret is accepted for API
+// symmetry with the other strategies (for callers that additionally sign the
+// cookie) but is not required by the core comparison.
+//
+// By default the value LookupFunc returns is compared against the presented
+// validator as-is, which means the store must hold the validator itself. To get
+// the stronger property the scheme is named for — a stolen database dump that
+// cannot be replayed as a login — set Options.Hash and store only digests.
+// HashValidator is a ready SHA-256 implementation:
+//
+//	remembercookie.New(remembercookie.Options{
+//		Hash:   remembercookie.HashValidator,
+//		Lookup: func(selector string) (any, string, error) {
+//			row := db.FindRememberToken(selector) // row.Digest is a SHA-256 hex string
+//			return row.User, row.Digest, nil
+//		},
+//	})
+//
+// A plain digest is the right primitive here rather than a password hash: the
+// validator is high-entropy random data, so there is nothing to brute force,
+// and a deliberately slow KDF would only add latency to every page load.
 //
 // Security and parity notes: set the cookie as HttpOnly, Secure and with a long
 // but bounded Max-Age/Expires, and rotate the validator (issue a new one and
@@ -43,7 +62,9 @@
 package remembercookie
 
 import (
+	"crypto/sha256"
 	"crypto/subtle"
+	"encoding/hex"
 	"net/http"
 	"strings"
 
@@ -53,29 +74,43 @@ import (
 // CookieName is the name of the remember-me cookie.
 const CookieName = "remember"
 
-// LookupFunc resolves a selector to the associated user and the stored hash of
-// the validator (tokenHash). It returns a nil user (or an error) when the
+// LookupFunc resolves a selector to the associated user and the stored token
+// value it must be checked against — the validator itself by default, or its
+// digest when Options.Hash is set. It returns a nil user (or an error) when the
 // selector is unknown.
 type LookupFunc func(selector string) (user any, tokenHash string, err error)
+
+// HashValidator returns the hex-encoded SHA-256 digest of a validator. Pass it
+// as Options.Hash to store digests rather than raw validators.
+func HashValidator(validator string) string {
+	sum := sha256.Sum256([]byte(validator))
+	return hex.EncodeToString(sum[:])
+}
 
 // Options configures the remembercookie Strategy.
 type Options struct {
 	// Secret is reserved for callers that additionally sign the cookie; it is
 	// accepted for API symmetry with the other strategies.
 	Secret []byte
-	// Lookup resolves the selector to a user and stored validator hash.
+	// Lookup resolves the selector to a user and the stored token value.
 	Lookup LookupFunc
+	// Hash, when set, is applied to the validator from the cookie before it is
+	// compared with the value Lookup returned, so the store need only hold
+	// digests. HashValidator is the recommended implementation. When nil the
+	// validator is compared as-is, which requires storing it in the clear.
+	Hash func(validator string) string
 }
 
 // Strategy authenticates requests presenting a valid remember-me cookie.
 type Strategy struct {
 	secret []byte
 	lookup LookupFunc
+	hash   func(validator string) string
 }
 
 // New creates a remembercookie Strategy.
 func New(opts Options) *Strategy {
-	return &Strategy{secret: opts.Secret, lookup: opts.Lookup}
+	return &Strategy{secret: opts.Secret, lookup: opts.Lookup, hash: opts.Hash}
 }
 
 // Name returns "remember-me".
@@ -104,7 +139,11 @@ func (s *Strategy) Authenticate(c *passport.Context, r *http.Request) {
 		c.Fail("Invalid token", http.StatusUnauthorized)
 		return
 	}
-	if subtle.ConstantTimeCompare([]byte(validator), []byte(tokenHash)) != 1 {
+	presented := validator
+	if s.hash != nil {
+		presented = s.hash(validator)
+	}
+	if subtle.ConstantTimeCompare([]byte(presented), []byte(tokenHash)) != 1 {
 		c.Fail("Invalid token", http.StatusUnauthorized)
 		return
 	}

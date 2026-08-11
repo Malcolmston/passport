@@ -57,7 +57,7 @@
 // Sessions are backed by a pluggable Store — an in-memory MemoryStore by default,
 // replaceable via SetStore with a Redis- or database-backed implementation — and
 // cookie behavior is tunable with SecureCookies. Stateless flows (API tokens, JWT
-// bearer) can skip sessions entirely with Options{Session: false}.
+// bearer) can skip sessions entirely with Options{Session: passport.NoSession()}.
 //
 // # Getting started
 //

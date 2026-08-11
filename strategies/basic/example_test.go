@@ -12,7 +12,7 @@ import (
 // ExampleNew shows the full backend wiring for HTTP Basic authentication
 // (RFC 7617). It registers the strategy with a VerifyFunc that receives the
 // decoded username and password and returns the authenticated user, then mounts
-// it on "/private" with passport.Options{Session: false} because Basic sends
+// it on "/private" with passport.Options{Session: passport.NoSession()} because Basic sends
 // credentials on every request. When the Authorization header is missing or
 // verification fails, the strategy replies 401 with a Basic realm challenge, so
 // browsers show their native credential prompt and no custom login form is
@@ -41,7 +41,7 @@ func ExampleNew() {
 
 	mux := http.NewServeMux()
 	// Basic is stateless: skip session creation on success.
-	mux.Handle("/private", p.Authenticate("basic", passport.Options{Session: false})(protected))
+	mux.Handle("/private", p.Authenticate("basic", passport.Options{Session: passport.NoSession()})(protected))
 
 	log.Fatal(http.ListenAndServe(":3000", passport.Chain(mux, p.Initialize(), p.Session())))
 }

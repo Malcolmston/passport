@@ -17,7 +17,7 @@ import (
 // WWW-Authenticate challenge, and the browser responds by showing its native
 // username/password prompt, so no custom login form is needed. On a matching
 // response the username becomes the authenticated user. The protected route is
-// mounted with passport.Options{Session: false} because Digest is stateless.
+// mounted with passport.Options{Session: passport.NoSession()} because Digest is stateless.
 //
 // A client authenticates by echoing the challenge with a computed response; curl
 // does the digest handshake for you with --digest:
@@ -45,7 +45,7 @@ func ExampleNew() {
 
 	mux := http.NewServeMux()
 	// Digest is stateless: skip session creation on success.
-	mux.Handle("/private", p.Authenticate("digest", passport.Options{Session: false})(protected))
+	mux.Handle("/private", p.Authenticate("digest", passport.Options{Session: passport.NoSession()})(protected))
 
 	log.Fatal(http.ListenAndServe(":3000", passport.Chain(mux, p.Initialize(), p.Session())))
 }

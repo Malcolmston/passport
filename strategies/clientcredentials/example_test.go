@@ -16,7 +16,7 @@ import (
 // its credentials on every request, either as HTTP Basic auth or as client_id and
 // client_secret form fields, and the strategy extracts them before calling
 // verify. Because the flow is stateless, the protected route is mounted with
-// passport.Options{Session: false} so no session cookie is created. The strategy
+// passport.Options{Session: passport.NoSession()} so no session cookie is created. The strategy
 // registers under the name "client-credentials".
 //
 // A client authenticates like so:
@@ -42,7 +42,7 @@ func ExampleNew() {
 
 	mux := http.NewServeMux()
 	// Client-credentials is stateless: skip session creation on success.
-	mux.Handle("/api/data", p.Authenticate("client-credentials", passport.Options{Session: false})(protected))
+	mux.Handle("/api/data", p.Authenticate("client-credentials", passport.Options{Session: passport.NoSession()})(protected))
 
 	log.Fatal(http.ListenAndServe(":3000", passport.Chain(mux, p.Initialize(), p.Session())))
 }

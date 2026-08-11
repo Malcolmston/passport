@@ -8,7 +8,7 @@
 // clients — for example to present a specific application name in the browser's
 // credential prompt, or to distinguish protected areas. Like Basic auth
 // generally it should run over HTTPS and is usually mounted statelessly with
-// passport.Options{Session: false}.
+// passport.Options{Session: passport.NoSession()}.
 //
 // On each request the strategy decodes the "Basic base64(user:pass)"
 // Authorization header and passes the username and password to Options.Verify.

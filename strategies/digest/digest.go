@@ -9,7 +9,7 @@
 // speak Digest. Because the browser itself renders the username/password dialog
 // in response to the challenge, there is no HTML frontend to write; the "frontend"
 // is simply any request to a protected URL. Digest is stateless per request, so
-// pair the strategy with passport.Options{Session: false}.
+// pair the strategy with passport.Options{Session: passport.NoSession()}.
 //
 // The exchange works in two steps. When a request carries no Digest Authorization
 // header, the strategy fails with a "Digest realm=..., nonce=..., qop=auth"
@@ -28,12 +28,15 @@
 // Options.Realm defaults to "Users", and Options.Nonce may be injected to make the
 // challenge deterministic in tests.
 //
-// SIMPLIFICATION and security caveats: this implementation does NOT track issued
-// nonces, nonce counts (nc), or opaque values, so it does not defend against
-// replay attacks and it accepts any well-formed nonce echoed by the client. It
-// also uses MD5, which is weak. Do not use it as the sole protection for sensitive
-// resources; layer it over TLS and, for real replay protection, add server-side
-// nonce/nc bookkeeping. The strategy registers under the name "digest".
+// SIMPLIFICATION and security caveats: by default this implementation does NOT
+// track issued nonces, nonce counts (nc), or opaque values, so out of the box it
+// does not defend against replay attacks and it accepts any well-formed nonce
+// echoed by the client — a captured Authorization header stays valid
+// indefinitely. Options.ValidateNonce is the hook for closing that gap: supply
+// it with a store of the nonces this server issued and reject any it did not
+// mint, has already seen at that nonce-count, or has expired. The scheme also
+// uses MD5, which is weak. Do not use it as the sole protection for sensitive
+// resources; layer it over TLS. The strategy registers under the name "digest".
 package digest
 
 import (
@@ -45,6 +48,7 @@ import (
 	"strings"
 
 	"github.com/malcolmston/passport"
+	"github.com/malcolmston/passport/httpauth"
 )
 
 // Options configures the digest Strategy.
@@ -58,13 +62,29 @@ type Options struct {
 	// Nonce, when set, returns the challenge nonce; defaults to a random value.
 	// Injected for deterministic tests.
 	Nonce func() string
+	// ValidateNonce, when set, is consulted with the nonce and nonce-count the
+	// client echoed back before the response digest is checked; returning
+	// false re-issues the challenge.
+	//
+	// This is the hook that turns Digest from a "proves knowledge of the
+	// password" check into one that also resists replay. Without it the
+	// strategy computes the expected digest over whatever nonce the client
+	// chose to send, so a captured Authorization header stays valid forever
+	// and can be replayed by anyone who observed it. A production
+	// implementation should record the nonces it issued, reject any it did not,
+	// expire them, and refuse an (nonce, nc) pair it has already seen.
+	//
+	// It is left opt-in because the bookkeeping needs storage this
+	// dependency-free strategy has no way to provide.
+	ValidateNonce func(nonce, nc string) bool
 }
 
 // Strategy authenticates requests using simplified HTTP Digest.
 type Strategy struct {
-	realm  string
-	secret func(user string) string
-	nonce  func() string
+	realm         string
+	secret        func(user string) string
+	nonce         func() string
+	validateNonce func(nonce, nc string) bool
 }
 
 // New creates a digest Strategy. opts.Realm defaults to "Users".
@@ -77,22 +97,65 @@ func New(opts Options) *Strategy {
 	if nonce == nil {
 		nonce = randomNonce
 	}
-	return &Strategy{realm: realm, secret: opts.Secret, nonce: nonce}
+	return &Strategy{
+		realm:         realm,
+		secret:        opts.Secret,
+		nonce:         nonce,
+		validateNonce: opts.ValidateNonce,
+	}
 }
 
 // Name returns "digest".
 func (s *Strategy) Name() string { return "digest" }
 
-// Authenticate implements passport.Strategy.
+// Authenticate implements passport.Strategy. Its control flow mirrors
+// passport-http's DigestStrategy, including its two rejection modes: a
+// *malformed* request (a header with no space-separated credentials, no
+// credentials at all, or one whose "uri" directive does not match the request
+// target) is a client error and fails with HTTP 400 and NO challenge, whereas a
+// missing header, a non-Digest scheme, a missing username, an unknown user, a
+// spent nonce, or a digest mismatch re-issues the 401 Digest challenge.
 func (s *Strategy) Authenticate(c *passport.Context, r *http.Request) {
 	h := r.Header.Get("Authorization")
-	if len(h) < 7 || !strings.EqualFold(h[:7], "digest ") {
+	if h == "" {
 		s.challenge(c)
 		return
 	}
-	params := parseParams(h[7:])
+	// Upstream: `parts = authorization.split(' '); if (parts.length < 2) fail(400)`.
+	sp := strings.IndexByte(h, ' ')
+	if sp < 0 {
+		c.Fail("", http.StatusBadRequest)
+		return
+	}
+	scheme, rest := h[:sp], h[sp+1:]
+	if !strings.EqualFold(scheme, "Digest") {
+		s.challenge(c)
+		return
+	}
+	// httpauth.ParseParams handles quoted-strings properly (backslash escapes,
+	// commas inside quotes) and lower-cases the keys, so a client that quotes
+	// a field this strategy reads is not silently misparsed.
+	params := httpauth.ParseParams(rest)
+	// Upstream: `if (Object.keys(creds).length === 0) fail(400)`.
+	if len(params) == 0 {
+		c.Fail("", http.StatusBadRequest)
+		return
+	}
 	username := params["username"]
 	if username == "" || params["response"] == "" {
+		s.challenge(c)
+		return
+	}
+	// URI binding (RFC 7616): the response is bound to the request-target the
+	// client hashed into HA2. Upstream rejects `req.url !== creds.uri` with 400,
+	// so one captured Authorization header cannot authenticate a different path.
+	// Compare against the request-target as the client sent it (path plus raw
+	// query), which is exactly what a conforming client puts in the "uri" field.
+	if params["uri"] != r.URL.RequestURI() {
+		c.Fail("", http.StatusBadRequest)
+		return
+	}
+	if s.validateNonce != nil && !s.validateNonce(params["nonce"], params["nc"]) {
 		s.challenge(c)
 		return
 	}
@@ -122,8 +185,14 @@ func (s *Strategy) Authenticate(c *passport.Context, r *http.Request) {
 }
 
 // challenge records a Digest WWW-Authenticate challenge with a fresh nonce.
+// The realm and nonce are emitted as quoted-strings so neither can terminate
+// the header value or inject a second one.
 func (s *Strategy) challenge(c *passport.Context) {
-	value := "Digest realm=\"" + s.realm + "\", nonce=\"" + s.nonce() + "\", qop=\"auth\""
+	value := httpauth.DigestChallenge(httpauth.DigestChallengeParams{
+		Realm: s.realm,
+		Nonce: s.nonce(),
+		QOP:   "auth",
+	})
 	if c.Writer != nil {
 		c.Writer.Header().Set("WWW-Authenticate", value)
 	}
@@ -135,48 +204,17 @@ func md5hex(s string) string {
 	return hex.EncodeToString(sum[:])
 }
 
+// randomNonce returns 128 bits of hex-encoded entropy for the challenge.
+//
+// A nonce that an attacker can predict undermines the whole exchange, so a
+// failure of the system random source must not be papered over: rather than
+// return an all-zero nonce, panic. On any platform this runs on, crypto/rand
+// failing means the process has no usable entropy source and cannot
+// meaningfully authenticate anyone.
 func randomNonce() string {
 	b := make([]byte, 16)
-	_, _ = rand.Read(b)
+	if _, err := rand.Read(b); err != nil {
+		panic("digest: crypto/rand unavailable, cannot issue a nonce: " + err.Error())
+	}
 	return hex.EncodeToString(b)
-}
-
-// parseParams parses a comma-separated list of key=value digest parameters,
-// stripping optional surrounding double quotes from values.
-func parseParams(s string) map[string]string {
-	out := make(map[string]string)
-	for _, part := range splitParams(s) {
-		eq := strings.IndexByte(part, '=')
-		if eq < 0 {
-			continue
-		}
-		key := strings.TrimSpace(part[:eq])
-		val := strings.TrimSpace(part[eq+1:])
-		val = strings.Trim(val, "\"")
-		out[key] = val
-	}
-	return out
-}
-
-// splitParams splits on commas that are not inside double quotes.
-func splitParams(s string) []string {
-	var parts []string
-	var b strings.Builder
-	inQuote := false
-	for _, r := range s {
-		switch {
-		case r == '"':
-			inQuote = !inQuote
-			b.WriteRune(r)
-		case r == ',' && !inQuote:
-			parts = append(parts, b.String())
-			b.Reset()
-		default:
-			b.WriteRune(r)
-		}
-	}
-	if b.Len() > 0 {
-		parts = append(parts, b.String())
-	}
-	return parts
 }

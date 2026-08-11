@@ -15,7 +15,7 @@ import (
 // reject with HTTP 401, or an error for an internal failure. Here it authenticates
 // on a shared-secret X-API-Key header, but the same pattern fits any check you can
 // make from the request alone. The protected route is mounted with
-// passport.Options{Session: false} because this API check is stateless. This is
+// passport.Options{Session: passport.NoSession()} because this API check is stateless. This is
 // the escape hatch for authentication schemes that no built-in strategy covers.
 func ExampleNew() {
 	p := passport.New()
@@ -35,7 +35,7 @@ func ExampleNew() {
 
 	mux := http.NewServeMux()
 	// The custom strategy is registered under the name passed to New.
-	mux.Handle("/api", p.Authenticate("apikey-header", passport.Options{Session: false})(protected))
+	mux.Handle("/api", p.Authenticate("apikey-header", passport.Options{Session: passport.NoSession()})(protected))
 
 	log.Fatal(http.ListenAndServe(":3000", passport.Chain(mux, p.Initialize(), p.Session())))
 }

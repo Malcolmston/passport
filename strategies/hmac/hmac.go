@@ -22,14 +22,21 @@
 // 401; on a match the key id becomes the authenticated user available through
 // passport.User(r).
 //
-// Two details are important for correctness. First, verification is over the
+// Three details are important for correctness. First, verification is over the
 // raw, unparsed request body, so the signed bytes must be exactly what the
 // sender signed; the strategy buffers the body while reading it and restores it
 // via an io.NopCloser so downstream handlers can still read the payload.
 // Second, the secret is resolved per request through the Secret(keyID)
 // callback, which supports multiple clients and key rotation: returning nil for
 // an unrecognized key id cleanly rejects the request, and the signature
-// comparison is constant-time to avoid leaking validity through timing.
+// comparison is constant-time to avoid leaking validity through timing. Third,
+// because verification needs the whole body in memory before the caller has
+// been authenticated, Options.MaxBodyBytes bounds how much is buffered; the
+// default is DefaultMaxBodyBytes.
+//
+// The presented signature is hex-decoded and compared as bytes, so upper- and
+// lower-case hex are equally acceptable and a non-hex value is rejected before
+// the body is read at all.
 //
 // Parity with Passport.js: like the Node HMAC strategies and provider webhook
 // verifiers, this recomputes a keyed digest of the request body and compares it
@@ -46,6 +53,7 @@ import (
 	"encoding/hex"
 	"io"
 	"net/http"
+	"strings"
 
 	"github.com/malcolmston/passport"
 )
@@ -60,22 +68,50 @@ type Options struct {
 	// KeyIDHeader carries the key id used to look up the secret. When empty the
 	// signature is verified against Secret("").
 	KeyIDHeader string
+	// MaxBodyBytes caps how many bytes of the request body are buffered while
+	// computing the signature. Verification requires the whole body in memory,
+	// so without a cap an unauthenticated caller can make the process allocate
+	// arbitrarily much simply by streaming a large payload at the endpoint. A
+	// body longer than the cap is rejected with 401 rather than truncated,
+	// because a truncated body would never produce a matching signature.
+	//
+	// Defaults to DefaultMaxBodyBytes. Set it to a negative value to disable
+	// the limit, which is only safe when an upstream proxy already bounds the
+	// request size.
+	MaxBodyBytes int64
 }
+
+// DefaultMaxBodyBytes is the body cap applied when Options.MaxBodyBytes is
+// zero. 10 MiB comfortably exceeds any realistic signed webhook payload — the
+// major providers cap their own deliveries well below it — while keeping the
+// worst-case allocation per in-flight request bounded.
+const DefaultMaxBodyBytes int64 = 10 << 20
 
 // Strategy authenticates requests bearing an HMAC-SHA256 body signature.
 type Strategy struct {
 	secret      func(keyID string) []byte
 	header      string
 	keyIDHeader string
+	maxBody     int64
 }
 
-// New creates an hmac Strategy. opts.Header defaults to "X-Signature".
+// New creates an hmac Strategy. opts.Header defaults to "X-Signature" and
+// opts.MaxBodyBytes to DefaultMaxBodyBytes.
 func New(opts Options) *Strategy {
 	header := opts.Header
 	if header == "" {
 		header = "X-Signature"
 	}
-	return &Strategy{secret: opts.Secret, header: header, keyIDHeader: opts.KeyIDHeader}
+	maxBody := opts.MaxBodyBytes
+	if maxBody == 0 {
+		maxBody = DefaultMaxBodyBytes
+	}
+	return &Strategy{
+		secret:      opts.Secret,
+		header:      header,
+		keyIDHeader: opts.KeyIDHeader,
+		maxBody:     maxBody,
+	}
 }
 
 // Name returns "hmac".
@@ -98,11 +134,31 @@ func (s *Strategy) Authenticate(c *passport.Context, r *http.Request) {
 		return
 	}
 
+	// Decode the presented signature before touching the body: a signature that
+	// is not valid hex can never match, so there is no reason to buffer a
+	// payload for it. Comparing decoded bytes rather than hex strings also
+	// makes the check insensitive to the case the sender used.
+	presented, err := hex.DecodeString(strings.TrimSpace(sig))
+	if err != nil {
+		c.Fail("Invalid signature", http.StatusUnauthorized)
+		return
+	}
+
 	var body []byte
 	if r.Body != nil {
-		b, err := io.ReadAll(r.Body)
+		var src io.Reader = r.Body
+		if s.maxBody > 0 {
+			// Read one byte past the cap so an over-long body is detected
+			// rather than silently truncated into a mismatching digest.
+			src = io.LimitReader(r.Body, s.maxBody+1)
+		}
+		b, err := io.ReadAll(src)
 		if err != nil {
 			c.Error(err)
+			return
+		}
+		if s.maxBody > 0 && int64(len(b)) > s.maxBody {
+			c.Fail("Request body too large", http.StatusUnauthorized)
 			return
 		}
 		body = b
@@ -111,9 +167,8 @@ func (s *Strategy) Authenticate(c *passport.Context, r *http.Request) {
 
 	mac := hmac.New(sha256.New, secret)
 	mac.Write(body)
-	expected := hex.EncodeToString(mac.Sum(nil))
 
-	if !hmac.Equal([]byte(sig), []byte(expected)) {
+	if !hmac.Equal(presented, mac.Sum(nil)) {
 		c.Fail("Invalid signature", http.StatusUnauthorized)
 		return
 	}

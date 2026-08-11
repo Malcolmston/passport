@@ -9,7 +9,7 @@
 // credential prompt or a scripted client (curl -u, an SDK) is acceptable.
 // Because the credentials are sent on every request it should only be used over
 // HTTPS, and it is typically mounted statelessly with
-// passport.Options{Session: false}.
+// passport.Options{Session: passport.NoSession()}.
 //
 // On each request the strategy parses the "Basic base64(user:pass)"
 // Authorization header. If the header is missing or malformed it fails with a
@@ -39,6 +39,7 @@ import (
 	"strings"
 
 	"github.com/malcolmston/passport"
+	"github.com/malcolmston/passport/httpauth"
 )
 
 // ErrInvalidCredentials is a convenience sentinel a VerifyFunc may return to
@@ -51,7 +52,10 @@ type VerifyFunc func(username, password string) (user any, err error)
 
 // Strategy authenticates requests using HTTP Basic credentials.
 type Strategy struct {
-	// Realm is reported in the WWW-Authenticate challenge on failure.
+	// Realm is reported in the WWW-Authenticate challenge on failure. It is
+	// rendered as a quoted-string by httpauth.BasicChallenge, so embedded
+	// quotes, backslashes and control characters cannot break out of the
+	// header value.
 	Realm string
 
 	verify VerifyFunc
@@ -65,49 +69,89 @@ func New(verify VerifyFunc) *Strategy {
 // Name returns "basic".
 func (s *Strategy) Name() string { return "basic" }
 
-// Authenticate implements passport.Strategy.
+// Authenticate implements passport.Strategy. Its control flow mirrors
+// passport-http's BasicStrategy exactly, including its two distinct rejection
+// modes: a *syntactically malformed* header (no space-separated credentials, or
+// a payload that decodes without a "user:pass" colon) is a client error and
+// fails with HTTP 400 and NO challenge, whereas a missing header, a non-Basic
+// scheme, empty credentials, or a verify rejection re-issues the 401 Basic
+// challenge.
 func (s *Strategy) Authenticate(c *passport.Context, r *http.Request) {
-	username, password, ok := parseBasicAuth(r.Header.Get("Authorization"))
-	if !ok {
-		c.Fail("Basic realm=\""+s.Realm+"\"", http.StatusUnauthorized)
+	authorization := r.Header.Get("Authorization")
+	if authorization == "" {
+		c.FailWithChallenge(httpauth.BasicChallenge(s.Realm), http.StatusUnauthorized)
 		return
 	}
+	// Upstream: `parts = authorization.split(' '); if (parts.length < 2) fail(400)`.
+	parts := strings.Split(authorization, " ")
+	if len(parts) < 2 {
+		c.Fail("", http.StatusBadRequest)
+		return
+	}
+	scheme := parts[0]
+	// Upstream decodes with Node's Buffer(x,'base64'), which is lenient: it
+	// ignores characters outside the base64 alphabet and tolerates missing
+	// padding. Mirror that so the same inputs decode to the same bytes.
+	decoded := lenientBase64(parts[1])
+	if !strings.EqualFold(scheme, httpauth.SchemeBasic) {
+		c.FailWithChallenge(httpauth.BasicChallenge(s.Realm), http.StatusUnauthorized)
+		return
+	}
+	// Upstream: `credentials = decoded.split(':'); if (credentials.length < 2) fail(400)`.
+	idx := strings.IndexByte(decoded, ':')
+	if idx < 0 {
+		c.Fail("", http.StatusBadRequest)
+		return
+	}
+	username, password := decoded[:idx], decoded[idx+1:]
 	// Parity with passport-http: credentials lacking a username or a password
 	// fail with the challenge without invoking the verify callback
 	// (upstream: `if (!userid || !password) return this.fail(this._challenge())`).
 	if username == "" || password == "" {
-		c.Fail("Basic realm=\""+s.Realm+"\"", http.StatusUnauthorized)
+		c.FailWithChallenge(httpauth.BasicChallenge(s.Realm), http.StatusUnauthorized)
 		return
 	}
 	user, err := s.verify(username, password)
 	if err != nil {
 		if errors.Is(err, ErrInvalidCredentials) {
-			c.Fail("Basic realm=\""+s.Realm+"\"", http.StatusUnauthorized)
+			c.FailWithChallenge(httpauth.BasicChallenge(s.Realm), http.StatusUnauthorized)
 			return
 		}
 		c.Error(err)
 		return
 	}
 	if user == nil {
-		c.Fail("Basic realm=\""+s.Realm+"\"", http.StatusUnauthorized)
+		c.FailWithChallenge(httpauth.BasicChallenge(s.Realm), http.StatusUnauthorized)
 		return
 	}
 	c.Success(user)
 }
 
-// parseBasicAuth decodes a "Basic base64(user:pass)" Authorization header.
-func parseBasicAuth(header string) (username, password string, ok bool) {
-	if len(header) < 6 || !strings.EqualFold(header[:6], "basic ") {
-		return "", "", false
+// lenientBase64 decodes s the way Node's Buffer.from(s, "base64") does: it
+// discards any byte outside the standard base64 alphabet and tolerates absent
+// padding, decoding the largest valid prefix rather than failing outright. The
+// standard library's decoders are strict, so an attacker-supplied payload that
+// upstream would decode (to bytes that then lack a ":" separator, yielding a
+// 400) must decode here too, to the same bytes.
+func lenientBase64(s string) string {
+	var b strings.Builder
+	b.Grow(len(s))
+	for i := 0; i < len(s); i++ {
+		c := s[i]
+		if (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') ||
+			(c >= '0' && c <= '9') || c == '+' || c == '/' {
+			b.WriteByte(c)
+		}
 	}
-	decoded, err := base64.StdEncoding.DecodeString(strings.TrimSpace(header[6:]))
+	clean := b.String()
+	// A base64 group is 4 chars; a trailing length of 1 encodes no whole byte,
+	// so drop it (Node does the same rather than erroring).
+	if len(clean)%4 == 1 {
+		clean = clean[:len(clean)-1]
+	}
+	dec, err := base64.RawStdEncoding.DecodeString(clean)
 	if err != nil {
-		return "", "", false
+		return ""
 	}
-	creds := string(decoded)
-	i := strings.IndexByte(creds, ':')
-	if i < 0 {
-		return "", "", false
-	}
-	return creds[:i], creds[i+1:], true
+	return string(dec)
 }

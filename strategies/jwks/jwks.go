@@ -32,7 +32,10 @@
 // "kid" header. Key rotation is handled automatically: an unknown kid triggers
 // a single refetch of the JWKS, and if that refetch fails with a transient
 // error the previously cached keys are served rather than failing outright, so a
-// brief provider outage does not immediately break authentication.
+// brief provider outage does not immediately break authentication. Because that
+// kid arrives on an unauthenticated request, refetching is rate limited to
+// Options.MaxRefreshesPerMinute so a flood of tokens bearing invented kids
+// cannot be turned into a flood of outbound fetches.
 //
 // A deliberate security guard is that HS* (HMAC) algorithms are never accepted
 // through the JWKS resolver, even if an allow-list would otherwise permit them:
@@ -200,8 +203,17 @@ func verifySignature(alg string, key any, signingInput string, sig []byte) error
 		if !ok {
 			return ErrKey
 		}
-		n := len(sig) / 2
-		if n == 0 || len(sig)%2 != 0 {
+		// RFC 7518 Section 3.4 fixes the ES* signature at exactly two
+		// fixed-width integers, each the byte length of the curve order: 64
+		// bytes for P-256, 96 for P-384, 132 for P-521. Splitting whatever
+		// length arrives in half instead would accept differently framed
+		// encodings of the same signature (and mis-split a DER-wrapped one),
+		// so require the exact size the curve dictates.
+		if pub.Curve == nil || pub.Curve.Params() == nil {
+			return ErrKey
+		}
+		n := (pub.Curve.Params().BitSize + 7) / 8
+		if len(sig) != 2*n {
 			return ErrSignature
 		}
 		r := new(big.Int).SetBytes(sig[:n])

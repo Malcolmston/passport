@@ -6,6 +6,37 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Fixed
+- Cross-language parity with upstream `passport` / `passport-http` /
+  `passport-http-bearer` (harness `parity/passport/`) raised from 66.2% to 100%
+  of compared cases (2 documented deviations, see `API-DEVIATIONS.md`):
+  - `Options.Session` is now a `*bool` (three states: nil = default-on matching
+    Passport.js `session:true`, `*false` = stateless, `*true` = explicit).
+    Previously the Go `bool` zero value meant `Options{SuccessRedirect: "/"}`
+    silently disabled the session, so the idiomatic upstream login never
+    established one. Use `NoSession()` / `WithSession()` helpers.
+  - HTTP Digest now enforces the RFC 7616 `uri` binding: the client's `uri`
+    directive must equal the request target, else 400 — a captured header no
+    longer authenticates a different path (matches upstream's
+    `req.url !== creds.uri` check).
+  - HTTP Basic and Digest now return 400 (no challenge) for a syntactically
+    malformed `Authorization` header, and 401 + challenge only for a
+    missing/rejected credential, matching upstream's two rejection modes.
+  - `WWW-Authenticate` is emitted only for genuine HTTP-auth challenges
+    (new `Context.FailWithChallenge`) on a 401 — the local strategy no longer
+    leaks `WWW-Authenticate: Invalid credentials` / `Missing credentials`.
+  - The local strategy no longer misclassifies a present, non-string JSON
+    password as a missing credential (400); it now fails authentication (401)
+    without coercing the value into a possible match.
+  - The Digest challenge header field order now matches upstream byte-for-byte
+    (`realm, nonce, qop`).
+### Added
+- `passport.Context.FailWithChallenge` — records an authentication failure whose
+  challenge is emitted as a `WWW-Authenticate` header (as distinct from `Fail`,
+  whose challenge is a plain message).
+- `passport.NoSession()` / `passport.WithSession()` — helpers for the new
+  `Options.Session *bool`.
+
 
 ## [0.3.0] - 2026-07-18
 ### Added

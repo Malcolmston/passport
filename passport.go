@@ -79,17 +79,39 @@ func (p *Passport) DeserializeUser(fn DeserializeFunc) *Passport {
 	return p
 }
 
-// SetStore replaces the session store (e.g. with a Redis-backed Store).
+// SetStore replaces the session store (e.g. with a Redis-backed Store),
+// preserving every cookie setting configured so far. Swapping the store must
+// never silently relax cookie security, so SecureCookies, CookieName, and
+// SameSite may be called before or after SetStore with the same result.
 func (p *Passport) SetStore(store Store) *Passport {
-	name := p.sessions.cookieName
-	p.sessions = newSessionManager(store)
-	p.sessions.cookieName = name
+	p.sessions.store = store
 	return p
 }
 
-// SecureCookies marks the session cookie Secure (send only over HTTPS).
+// SecureCookies marks the session cookie Secure (send only over HTTPS). Enable
+// it for any deployment served over TLS.
 func (p *Passport) SecureCookies(secure bool) *Passport {
 	p.sessions.secure = secure
+	return p
+}
+
+// CookieName overrides the name of the session cookie (DefaultCookieName).
+// An empty name is ignored, since a cookie with no name cannot be read back.
+func (p *Passport) CookieName(name string) *Passport {
+	if name != "" {
+		p.sessions.cookieName = name
+	}
+	return p
+}
+
+// SameSite sets the SameSite attribute of the session cookie. The default is
+// http.SameSiteLaxMode, which blocks the cookie on cross-site POSTs — the CSRF
+// shape that matters for login endpoints — while still allowing top-level
+// navigations back from an external identity provider. Use
+// http.SameSiteNoneMode (together with SecureCookies(true)) only when the
+// session genuinely must travel on cross-site subrequests.
+func (p *Passport) SameSite(mode http.SameSite) *Passport {
+	p.sessions.sameSite = mode
 	return p
 }
 
@@ -180,6 +202,15 @@ func (p *Passport) LogIn(w http.ResponseWriter, r *http.Request, user any) error
 }
 
 // LogOut clears the current login session and removes the session cookie.
+//
+// Deliberate divergence from Passport.js: upstream (express-session,
+// keepSessionInfo:false) regenerates the session on logout and therefore issues
+// a fresh, empty session cookie for the now-anonymous request. This port instead
+// destroys the session server-side and expires the client cookie (MaxAge < 0),
+// declining to mint a new session for an unauthenticated user. Both approaches
+// invalidate the old id — a replayed pre-logout cookie authenticates on neither
+// — but the port avoids handing an anonymous client a cookie it did not ask for.
+// See TestLogOutDestroysSessionAndCookie and API-DEVIATIONS.md.
 func (p *Passport) LogOut(w http.ResponseWriter, r *http.Request) error {
 	st := stateFrom(r)
 	if st == nil {

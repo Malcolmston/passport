@@ -78,8 +78,11 @@ import (
 
 // Config holds the OIDC client configuration.
 type Config struct {
-	Issuer       string // OIDC issuer identifier, validated against the id_token "iss" claim
-	ClientID     string // OAuth2 client (application) ID
+	Issuer string // OIDC issuer identifier, validated against the id_token "iss" claim
+	// ClientID is the OAuth2 client (application) ID. It is also validated
+	// against the id_token "aud" claim, which must contain it, so a token the
+	// provider issued to a different relying party cannot be replayed here.
+	ClientID     string
 	ClientSecret string // OAuth2 client (application) secret
 	RedirectURL  string // URL the provider redirects back to after authorization
 
@@ -218,6 +221,10 @@ func (s *Strategy) Exchange(ctx context.Context, code string) (*tokenResponse, e
 	return &tr, nil
 }
 
+// ErrNoVerificationKey reports that neither JWKSURL nor JWKSecret was
+// configured, leaving nothing to verify the id_token signature against.
+var ErrNoVerificationKey = errors.New("openidconnect: neither JWKSURL nor JWKSecret is configured; id_token signatures cannot be verified")
+
 // verifyIDToken validates the id_token signature and time claims, returning its
 // claims. It uses the JWKS endpoint (RS256/ES256) when configured, otherwise
 // the HS256 shared secret.
@@ -229,8 +236,38 @@ func (s *Strategy) verifyIDToken(idToken string) (jwt.Claims, error) {
 		}
 		return jwt.Claims(claims), nil
 	}
+	// Fail closed. With no JWKS endpoint and an empty JWKSecret the HS256
+	// fallback would "verify" every id_token against a zero-length HMAC key —
+	// a key anyone can reproduce — so a misconfigured Strategy would silently
+	// accept forged tokens instead of refusing to start the flow.
+	if len(s.cfg.JWKSecret) == 0 {
+		return nil, ErrNoVerificationKey
+	}
 	parser := jwt.New(s.cfg.JWKSecret, nil)
 	return parser.Parse(idToken)
+}
+
+// checkAudience enforces OpenID Connect Core Section 3.1.3.7 step 3: the
+// id_token's "aud" claim must contain this client's ClientID. Without it a
+// token the provider minted for a different relying party would be accepted
+// here, letting one client's token be replayed against another.
+func checkAudience(claims jwt.Claims, clientID string) error {
+	if clientID == "" {
+		return nil
+	}
+	switch aud := claims["aud"].(type) {
+	case string:
+		if aud == clientID {
+			return nil
+		}
+	case []any:
+		for _, a := range aud {
+			if s, ok := a.(string); ok && s == clientID {
+				return nil
+			}
+		}
+	}
+	return fmt.Errorf("openidconnect: id_token audience does not include client %q", clientID)
 }
 
 // Authenticate implements passport.Strategy.
@@ -260,6 +297,11 @@ func (s *Strategy) Authenticate(c *passport.Context, r *http.Request) {
 			c.Fail("invalid_token", http.StatusUnauthorized)
 			return
 		}
+	}
+	// Validate the audience: the token must have been minted for this client.
+	if err := checkAudience(claims, s.cfg.ClientID); err != nil {
+		c.Fail("invalid_token", http.StatusUnauthorized)
+		return
 	}
 
 	if s.verify != nil {

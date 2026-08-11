@@ -22,10 +22,20 @@ func Chain(h http.Handler, mw ...Middleware) http.Handler {
 
 // Options controls how Authenticate handles the outcome of a strategy.
 type Options struct {
-	// Session, when true, establishes a persistent login session on success
-	// (the default). Set to false for stateless authentication (e.g. API
-	// tokens) where no session should be created.
-	Session bool
+	// Session controls whether a persistent login session is established on a
+	// successful authentication. It is a *bool with three states, matching
+	// Passport.js's `session` option:
+	//
+	//   - nil   → the default: a session IS established (Passport.js session:true).
+	//   - false → stateless authentication (e.g. API tokens): no session.
+	//   - true  → explicitly establish a session.
+	//
+	// It is a pointer, not a bool, so the zero value of an Options literal that
+	// only sets other fields — e.g. Options{SuccessRedirect: "/"} — still
+	// defaults to establishing a session, exactly as the idiomatic Passport.js
+	// call authenticate('local', {successRedirect: '/'}) does. Use NoSession()
+	// for stateless auth and WithSession() to be explicit.
+	Session *bool
 
 	// SuccessRedirect, if set, redirects here after a successful login instead
 	// of calling the next handler.
@@ -44,8 +54,25 @@ type Options struct {
 }
 
 func defaultOptions() *Options {
-	return &Options{Session: true}
+	// Session left nil: a session is established by default (Passport.js session:true).
+	return &Options{}
 }
+
+// useSession reports whether a session should be established for this attempt.
+// A nil Session means the default (on); an explicit *false disables it.
+func (o *Options) useSession() bool {
+	return o.Session == nil || *o.Session
+}
+
+// NoSession returns a *bool for Options.Session that disables session creation
+// for an authentication attempt, for stateless auth such as API tokens. It is
+// shorthand for taking the address of a false bool.
+func NoSession() *bool { b := false; return &b }
+
+// WithSession returns a *bool for Options.Session that forces session creation.
+// Since Session defaults to on when left nil, this is only needed to be
+// explicit about the default.
+func WithSession() *bool { b := true; return &b }
 
 // Authenticate returns middleware that authenticates a request using the named
 // strategy. On success it attaches the user to the request (and, unless
@@ -84,7 +111,7 @@ func (p *Passport) Authenticate(name string, opts ...Options) Middleware {
 					st.user = c.user
 					st.authed = true
 				}
-				if o.Session {
+				if o.useSession() {
 					if err := p.LogIn(w, r, c.user); err != nil {
 						http.Error(w, err.Error(), http.StatusInternalServerError)
 						return
@@ -112,7 +139,9 @@ func (p *Passport) Authenticate(name string, opts ...Options) Middleware {
 				if o.FailureMessage && c.challenge != "" {
 					msg = c.challenge
 				}
-				if c.challenge != "" {
+				// Emit WWW-Authenticate only for a genuine HTTP-auth challenge
+				// (FailWithChallenge) and only on a 401, matching Passport.js.
+				if c.www && c.challenge != "" && status == http.StatusUnauthorized {
 					w.Header().Set("WWW-Authenticate", c.challenge)
 				}
 				http.Error(w, msg, status)

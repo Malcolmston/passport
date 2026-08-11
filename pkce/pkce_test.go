@@ -1,6 +1,9 @@
 package pkce
 
-import "testing"
+import (
+	"strings"
+	"testing"
+)
 
 // RFC 7636 Appendix B worked example.
 const (
@@ -49,11 +52,47 @@ func TestVerify(t *testing.T) {
 	if Verify(MethodS256, rfcVerifier, "wrong") {
 		t.Error("Verify S256 should fail for mismatched challenge")
 	}
-	if !Verify(MethodPlain, "abc", "abc") {
-		t.Error("Verify plain should succeed for identical strings")
+	if !Verify(MethodPlain, rfcVerifier, rfcVerifier) {
+		t.Error("Verify plain should succeed for identical valid verifiers")
 	}
-	if Verify(Method("bogus"), "a", "a") {
+	if Verify(Method("bogus"), rfcVerifier, rfcVerifier) {
 		t.Error("Verify with unknown method must be false")
+	}
+}
+
+// TestVerifyRejectsInvalidVerifier pins RFC 7636 Section 4.6: the server must
+// validate the code verifier it receives. Under MethodPlain the challenge is
+// the verifier, so skipping that check would let a client that presents an
+// empty (or trivially short) verifier match an empty stored challenge and
+// bypass PKCE altogether.
+func TestVerifyRejectsInvalidVerifier(t *testing.T) {
+	cases := []struct {
+		name              string
+		verifier          string
+		challenge         string
+		method            Method
+		reason            string
+		alsoRejectedS256T bool
+	}{
+		{name: "empty verifier and challenge", verifier: "", challenge: "", method: MethodPlain,
+			reason: "an empty plain pair must never match"},
+		{name: "short verifier", verifier: "abc", challenge: "abc", method: MethodPlain,
+			reason: "verifiers below 43 characters carry too little entropy"},
+		{name: "over-long verifier", verifier: strings.Repeat("a", 129), challenge: strings.Repeat("a", 129), method: MethodPlain,
+			reason: "verifiers above 128 characters are out of range"},
+		{name: "illegal character", verifier: strings.Repeat("a", 42) + "/", challenge: strings.Repeat("a", 42) + "/", method: MethodPlain,
+			reason: "only the unreserved set is permitted"},
+		{name: "empty challenge under S256", verifier: rfcVerifier, challenge: "", method: MethodS256,
+			reason: "an absent stored challenge must not verify"},
+		{name: "short verifier under S256", verifier: "abc", challenge: S256Challenge("abc"), method: MethodS256,
+			reason: "a self-consistent but too-short verifier is still invalid"},
+	}
+	for _, tt := range cases {
+		t.Run(tt.name, func(t *testing.T) {
+			if Verify(tt.method, tt.verifier, tt.challenge) {
+				t.Errorf("Verify(%q, ...) = true, want false: %s", tt.method, tt.reason)
+			}
+		})
 	}
 }
 

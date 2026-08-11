@@ -1,31 +1,70 @@
 package saml_test
 
 import (
+	"fmt"
 	"log"
 	"net/http"
+	"os"
+	"time"
 
 	"github.com/malcolmston/passport"
 	"github.com/malcolmston/passport/strategies/saml"
 )
 
+// ExampleMemoryReplayCache shows the replay protection in isolation: the first
+// use of an assertion ID is fresh, a second use of the same ID inside its
+// validity window is not. Strategy uses this automatically; implement
+// saml.ReplayCache yourself when more than one process terminates SAML, so a
+// captured response cannot simply be aimed at another instance.
+func ExampleMemoryReplayCache() {
+	cache := saml.NewMemoryReplayCache(1000)
+	expires := time.Now().Add(5 * time.Minute)
+
+	first, _ := cache.Store("_assertion-id-1", expires)
+	second, _ := cache.Store("_assertion-id-1", expires)
+	other, _ := cache.Store("_assertion-id-2", expires)
+
+	fmt.Println(first, second, other)
+	// Output: true false true
+}
+
 // ExampleNew shows the full wiring for a SAML 2.0 Service Provider using the
 // Web Browser SSO POST binding. The identity provider POSTs a base64
 // "SAMLResponse" form field to the Assertion Consumer Service (ACS) endpoint,
-// where the strategy extracts the NameID and maps it to an application user. The
-// Verify func turns that NameID into your user object, and SerializeUser and
-// DeserializeUser persist it across requests through the passport session. The
-// ACS route is registered with a SuccessRedirect so the browser is sent home
-// once the assertion is accepted. NOTE: this strategy does NOT verify the XML
-// signature, so a production SP must add signature validation before trusting
-// the assertion.
+// where the strategy validates the response and maps the asserted NameID to an
+// application user. The Verify func turns that NameID into your user object,
+// and SerializeUser and DeserializeUser persist it across requests through the
+// passport session. The ACS route is registered with a SuccessRedirect so the
+// browser is sent home once the assertion is accepted.
+//
+// The three options below the Verify func are what make the strategy safe and
+// are all mandatory in practice: without IdPCertificates every response is
+// rejected, Audience is what stops an assertion minted for a different service
+// provider from being replayed at yours, and AssertionConsumerServiceURL is
+// compared against the assertion's Recipient and the response's Destination.
 func ExampleNew() {
 	p := passport.New()
+
+	// The IdP's signing certificate, taken from its metadata and pinned in
+	// your configuration. A certificate carried inside the response is never
+	// trusted on its own.
+	pemBytes, err := os.ReadFile("/etc/myapp/idp-signing.crt")
+	if err != nil {
+		log.Fatal(err)
+	}
+	idpCerts, err := saml.ParseCertificates(pemBytes)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	p.Use(saml.New(saml.Options{
 		// Map the asserted NameID (e.g. an email) to your application user.
 		Verify: func(nameID string) (any, error) {
 			return map[string]string{"email": nameID}, nil
 		},
+		IdPCertificates:             idpCerts,
+		Audience:                    "https://sp.example.com/metadata",
+		AssertionConsumerServiceURL: "https://sp.example.com/acs",
 	}))
 	p.SerializeUser(func(u any) (string, error) { return u.(map[string]string)["email"], nil })
 	p.DeserializeUser(func(id string, _ *http.Request) (any, error) {

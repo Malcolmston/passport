@@ -8,7 +8,7 @@
 // Reach for this strategy for machine-to-machine and simple programmatic access
 // where issuing full OAuth credentials is overkill: internal service calls,
 // webhooks, cron jobs, or a developer API guarded by keys minted in a dashboard.
-// It is stateless, so it pairs naturally with passport.Options{Session: false}
+// It is stateless, so it pairs naturally with passport.Options{Session: passport.NoSession()}
 // and needs no cookies or redirects.
 //
 // On each request the key is read from a configurable header (defaulting to

@@ -96,7 +96,18 @@ func (s *Strategy) Name() string { return "local" }
 
 // Authenticate implements passport.Strategy.
 func (s *Strategy) Authenticate(c *passport.Context, r *http.Request) {
-	username, password := s.credentials(r)
+	username, password, nonString := s.credentials(r)
+	if nonString {
+		// A credential field was present but was not a string (e.g. a JSON
+		// number or boolean). Upstream passport-local forwards such a truthy
+		// value to the verify callback, where it can never equal a stored
+		// string password, so authentication fails with 401 — NOT the 400
+		// "Missing credentials" the port would otherwise report for an empty
+		// field. Rejecting here (rather than coercing to a string) also avoids
+		// a numeric password ever matching a string one.
+		c.Fail("Invalid credentials", http.StatusUnauthorized)
+		return
+	}
 	if username == "" || password == "" {
 		c.Fail("Missing credentials", http.StatusBadRequest)
 		return
@@ -127,31 +138,59 @@ func (s *Strategy) runVerify(r *http.Request, username, password string) (any, e
 }
 
 // credentials extracts the username and password from the request, supporting
-// form-encoded bodies, query parameters, and JSON bodies.
-func (s *Strategy) credentials(r *http.Request) (string, string) {
+// form-encoded bodies, query parameters, and JSON bodies. The third return
+// value reports that a credential field was present in a JSON body with a
+// truthy non-string value, which upstream forwards to the verify callback
+// rather than treating as missing.
+func (s *Strategy) credentials(r *http.Request) (username, password string, nonString bool) {
 	ct := strings.ToLower(r.Header.Get("Content-Type"))
 	if strings.Contains(ct, "application/json") {
 		return s.jsonCredentials(r)
 	}
 	// ParseForm populates r.Form from the query string and a urlencoded body.
 	_ = r.ParseForm()
-	return r.FormValue(s.UsernameField), r.FormValue(s.PasswordField)
+	return r.FormValue(s.UsernameField), r.FormValue(s.PasswordField), false
 }
 
-func (s *Strategy) jsonCredentials(r *http.Request) (string, string) {
+func (s *Strategy) jsonCredentials(r *http.Request) (username, password string, nonString bool) {
 	if r.Body == nil {
-		return "", ""
+		return "", "", false
 	}
 	data, err := io.ReadAll(io.LimitReader(r.Body, 1<<20))
 	r.Body.Close()
 	if err != nil {
-		return "", ""
+		return "", "", false
 	}
 	var m map[string]any
 	if err := json.Unmarshal(data, &m); err != nil {
-		return "", ""
+		return "", "", false
 	}
-	username, _ := m[s.UsernameField].(string)
-	password, _ := m[s.PasswordField].(string)
-	return username, password
+	username, ns1 := jsonField(m, s.UsernameField)
+	password, ns2 := jsonField(m, s.PasswordField)
+	return username, password, ns1 || ns2
+}
+
+// jsonField reads one credential field from a decoded JSON object. A string is
+// returned as-is. A truthy non-string value (a non-zero number, true, or a
+// nested object/array) yields ("", true): upstream's `!username || !password`
+// guard treats it as present, forwarding it to the verify callback, so the port
+// must not misclassify it as a missing credential. A falsy value (absent, null,
+// false, 0, or "") is a missing credential like any other.
+func jsonField(m map[string]any, key string) (string, bool) {
+	v, ok := m[key]
+	if !ok {
+		return "", false
+	}
+	switch x := v.(type) {
+	case string:
+		return x, false
+	case nil:
+		return "", false
+	case bool:
+		return "", x // true is a truthy non-string; false is missing
+	case float64:
+		return "", x != 0 // a non-zero number is truthy; 0 is missing
+	default:
+		return "", true // objects and arrays are truthy non-strings
+	}
 }

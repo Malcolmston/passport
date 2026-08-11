@@ -13,7 +13,7 @@
 [![Code Size](https://img.shields.io/github/languages/code-size/Malcolmston/passport)](https://github.com/Malcolmston/passport)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
-[![Docs](https://img.shields.io/badge/docs-pages-2f9bff)](https://malcolmston.github.io/passport/)
+[![Docs](https://img.shields.io/badge/docs-vercel-2f9bff)](https://go-malcolms-projects-18e573c3.vercel.app/lib/passport)
 
 **Node's Passport, for Go.**
 

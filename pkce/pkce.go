@@ -125,13 +125,43 @@ func ComputeChallenge(method Method, verifier string) (string, error) {
 }
 
 // Verify reports whether verifier matches challenge under method, using a
-// constant-time comparison. An unrecognized method returns false.
+// constant-time comparison. It returns false for an unrecognized method, an
+// empty challenge, or a verifier that is not syntactically valid per
+// ValidVerifier.
+//
+// The syntax check is load-bearing, not cosmetic. RFC 7636 Section 4.6 requires
+// the server to validate the verifier it receives, and under MethodPlain the
+// challenge is the verifier: without the check, a request presenting an empty
+// verifier against a stored empty challenge would "match" and defeat PKCE
+// entirely. Rejecting anything shorter than 43 characters also enforces the
+// entropy floor the RFC mandates.
 func Verify(method Method, verifier, challenge string) bool {
+	if challenge == "" || !ValidVerifier(verifier) {
+		return false
+	}
 	computed, err := ComputeChallenge(method, verifier)
 	if err != nil {
 		return false
 	}
 	return subtle.ConstantTimeCompare([]byte(computed), []byte(challenge)) == 1
+}
+
+// ParseMethod interprets a code_challenge_method value from an authorization
+// request. RFC 7636 Section 4.3 specifies that an absent method means "plain",
+// so an empty string yields MethodPlain; any value other than the two defined
+// transformations is an error. The comparison is case-sensitive, as the RFC
+// defines both names as literals.
+func ParseMethod(s string) (Method, error) {
+	switch Method(s) {
+	case "":
+		return MethodPlain, nil
+	case MethodS256:
+		return MethodS256, nil
+	case MethodPlain:
+		return MethodPlain, nil
+	default:
+		return "", fmt.Errorf("pkce: unknown code_challenge_method %q", s)
+	}
 }
 
 // Pair bundles a verifier with its derived challenge and the transformation
@@ -152,6 +182,28 @@ func New() (Pair, error) {
 	return Pair{Verifier: v, Challenge: S256Challenge(v), Method: MethodS256}, nil
 }
 
+// NewWithMethod returns a fresh Pair using the given transformation.
+//
+// Callers should pass MethodS256 unless they are talking to a server that
+// genuinely cannot do SHA-256: under MethodPlain the challenge is the verifier
+// in cleartext, so anything that can observe the authorization request also
+// learns the secret and PKCE stops protecting against code interception. RFC
+// 7636 Section 4.2 requires clients capable of S256 to use it.
+func NewWithMethod(method Method) (Pair, error) {
+	if !method.Valid() {
+		return Pair{}, fmt.Errorf("pkce: unknown method %q", method)
+	}
+	v, err := GenerateVerifier()
+	if err != nil {
+		return Pair{}, err
+	}
+	challenge, err := ComputeChallenge(method, v)
+	if err != nil {
+		return Pair{}, err
+	}
+	return Pair{Verifier: v, Challenge: challenge, Method: method}, nil
+}
+
 // AuthParams returns the query parameters a client adds to the authorization
 // request: code_challenge and code_challenge_method.
 func (p Pair) AuthParams() map[string]string {
@@ -159,4 +211,18 @@ func (p Pair) AuthParams() map[string]string {
 		"code_challenge":        p.Challenge,
 		"code_challenge_method": p.Method.String(),
 	}
+}
+
+// TokenParams returns the form parameters a client adds to the authorization-
+// code token request: the single code_verifier field (RFC 7636 Section 4.5).
+// The verifier is a secret and must travel only on that back-channel POST,
+// never on the front-channel authorization request.
+func (p Pair) TokenParams() map[string]string {
+	return map[string]string{"code_verifier": p.Verifier}
+}
+
+// Valid reports whether p is internally consistent: the verifier is
+// syntactically legal and the challenge is exactly what Method derives from it.
+func (p Pair) Valid() bool {
+	return Verify(p.Method, p.Verifier, p.Challenge)
 }

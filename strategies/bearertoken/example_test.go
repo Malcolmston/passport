@@ -15,7 +15,7 @@ import (
 // against a token store or an RFC 7662 introspection endpoint — and returns the
 // user. The strategy registers under the name "bearer-token" (its Name()), so
 // that is the name passed to Authenticate, and it is mounted with
-// passport.Options{Session: false} because tokens are stateless. The token is
+// passport.Options{Session: passport.NoSession()} because tokens are stateless. The token is
 // read only from the "Authorization: Bearer <token>" header, and only a
 // successful introspection lets the protected handler run. A client authenticates
 // by presenting the token:
@@ -40,7 +40,7 @@ func ExampleNew() {
 
 	mux := http.NewServeMux()
 	// Bearer tokens are stateless: skip session creation on success.
-	mux.Handle("/private", p.Authenticate("bearer-token", passport.Options{Session: false})(protected))
+	mux.Handle("/private", p.Authenticate("bearer-token", passport.Options{Session: passport.NoSession()})(protected))
 
 	log.Fatal(http.ListenAndServe(":3000", passport.Chain(mux, p.Initialize(), p.Session())))
 }

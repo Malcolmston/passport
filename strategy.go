@@ -61,6 +61,7 @@ type Context struct {
 	user      any
 	info      any    // optional info object attached on success/fail
 	challenge string // challenge message on failure
+	www       bool   // challenge is a WWW-Authenticate header value, not a message
 	status    int    // HTTP status for failure/redirect
 	location  string // redirect target
 	err       error
@@ -76,15 +77,34 @@ func (c *Context) Success(user any, info ...any) {
 	}
 }
 
-// Fail records that authentication failed. challenge is an optional message
-// (e.g. "Invalid credentials"); status defaults to 401 when zero.
+// Fail records that authentication failed. challenge is an optional
+// human-readable message (e.g. "Invalid credentials") — NOT an HTTP
+// WWW-Authenticate value, so it is never emitted as a WWW-Authenticate header;
+// status defaults to 401 when zero. This mirrors Passport.js, where a strategy
+// that calls this.fail() with a non-string (object) challenge — as
+// passport-local does — produces no WWW-Authenticate header. HTTP
+// authentication strategies (Basic, Bearer, Digest) that must advertise a
+// challenge should call FailWithChallenge instead.
 func (c *Context) Fail(challenge string, status int) {
 	c.result = outcomeFail
 	c.challenge = challenge
+	c.www = false
 	if status == 0 {
 		status = http.StatusUnauthorized
 	}
 	c.status = status
+}
+
+// FailWithChallenge records an authentication failure whose challenge is an HTTP
+// WWW-Authenticate header value (RFC 7235), such as `Basic realm="…"` or
+// `Digest realm="…", nonce="…", qop="auth"`. Unlike Fail, the challenge here is
+// emitted as a WWW-Authenticate response header — but only when the failure is
+// actually rendered as a 401 (a configured FailureRedirect diverts it first,
+// and no header is sent). This mirrors Passport.js, whose middleware sets
+// WWW-Authenticate only for string challenges when the response status is 401.
+func (c *Context) FailWithChallenge(challenge string, status int) {
+	c.Fail(challenge, status)
+	c.www = true
 }
 
 // Redirect records that the strategy wants to redirect the user agent (for

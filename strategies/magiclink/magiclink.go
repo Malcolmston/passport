@@ -107,22 +107,40 @@ func (s *Strategy) Authenticate(c *passport.Context, r *http.Request) {
 		return
 	}
 
+	// Decode the presented signature to bytes and compare those, rather than
+	// comparing hex strings: that makes the check insensitive to the case a
+	// client used, and it rejects a non-hex signature outright instead of
+	// letting it reach the comparison.
+	got, err := hex.DecodeString(sig)
+	if err != nil {
+		c.Fail("Invalid signature", http.StatusUnauthorized)
+		return
+	}
 	mac := hmac.New(sha256.New, s.secret)
 	mac.Write(payload)
-	expected := hex.EncodeToString(mac.Sum(nil))
-	if !hmac.Equal([]byte(sig), []byte(expected)) {
+	if !hmac.Equal(got, mac.Sum(nil)) {
 		c.Fail("Invalid signature", http.StatusUnauthorized)
 		return
 	}
 
-	parts := strings.SplitN(string(payload), "|", 2)
-	if len(parts) != 2 {
+	// Split at the LAST "|", not the first: Sign appends the expiry to the
+	// address, and an address may itself contain "|" (RFC 5321 permits it in a
+	// quoted local part). Splitting at the first separator would take that
+	// interior "|" as the field boundary and reject a token this package had
+	// just minted. The signature already covers the whole payload, so this only
+	// affects how a payload we have authenticated is decomposed.
+	bar := strings.LastIndexByte(string(payload), '|')
+	if bar < 0 {
 		c.Fail("Malformed token", http.StatusUnauthorized)
 		return
 	}
-	email := parts[0]
-	exp, err := strconv.ParseInt(parts[1], 10, 64)
+	email := string(payload)[:bar]
+	exp, err := strconv.ParseInt(string(payload)[bar+1:], 10, 64)
 	if err != nil {
+		c.Fail("Malformed token", http.StatusUnauthorized)
+		return
+	}
+	if email == "" {
 		c.Fail("Malformed token", http.StatusUnauthorized)
 		return
 	}

@@ -14,7 +14,7 @@ import (
 // client-certificate strategy. It registers the strategy with a VerifyFunc that
 // inspects the verified client certificate (here the subject common name) and
 // returns the authenticated user, then mounts it on "/secure" with
-// passport.Options{Session: false} because the certificate re-authenticates every
+// passport.Options{Session: passport.NoSession()} because the certificate re-authenticates every
 // connection. The strategy registers under the name "client-cert" and reads the
 // peer's leaf certificate from the request's TLS state, so the request must
 // arrive over HTTPS with a client certificate present. Crucially the server must
@@ -45,7 +45,7 @@ func ExampleNew() {
 
 	mux := http.NewServeMux()
 	// mTLS is stateless: skip session creation on success.
-	mux.Handle("/secure", p.Authenticate("client-cert", passport.Options{Session: false})(protected))
+	mux.Handle("/secure", p.Authenticate("client-cert", passport.Options{Session: passport.NoSession()})(protected))
 
 	handler := passport.Chain(mux, p.Initialize(), p.Session())
 
