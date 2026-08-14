@@ -1,0 +1,2308 @@
+{
+  "generator": "malcolmston/go: scripts/subrepo/gen-passport-manifest.ts",
+  "core": {
+    "module": "github.com/malcolmston/passport",
+    "version": "v0.4.0"
+  },
+  "convention": {
+    "repo": "malcolmston/passport-<strategy>",
+    "module": "github.com/malcolmston/passport-<strategy>",
+    "submodulePath": "strategies/<strategy>",
+    "note": "Import paths change with the split: a separate repository cannot serve github.com/malcolmston/passport/strategies/<strategy>. Every entry records legacyImport for mechanical rewrites."
+  },
+  "counts": {
+    "total": 154,
+    "layer1": 31,
+    "layer2": 123
+  },
+  "creationOrder": {
+    "layer1": [
+      "anonymous",
+      "apikey",
+      "apitoken",
+      "basic",
+      "basicverify",
+      "bearer",
+      "bearertoken",
+      "cas",
+      "clientcert",
+      "clientcredentials",
+      "cookietoken",
+      "custom",
+      "digest",
+      "headertoken",
+      "hmac",
+      "hotp",
+      "jwks",
+      "jwt",
+      "ldap",
+      "local",
+      "magiclink",
+      "oauth1",
+      "oauth2",
+      "querytoken",
+      "refreshtoken",
+      "remembercookie",
+      "saml",
+      "sessiontoken",
+      "signedtoken",
+      "totp",
+      "webauthn"
+    ],
+    "layer2": [
+      "adobe",
+      "airtable",
+      "amazon",
+      "apple",
+      "arcgis",
+      "asana",
+      "atlassian",
+      "auth0",
+      "azuread",
+      "battlenet",
+      "bitbucket",
+      "bitly",
+      "box",
+      "buffer",
+      "bungie",
+      "calendly",
+      "canva",
+      "clickup",
+      "cognito",
+      "coinbase",
+      "dailymotion",
+      "deezer",
+      "deviantart",
+      "digitalocean",
+      "discord",
+      "docusign",
+      "dropbox",
+      "ebay",
+      "epicgames",
+      "etsy",
+      "eventbrite",
+      "facebook",
+      "feedly",
+      "figma",
+      "fitbit",
+      "fortytwo",
+      "foursquare",
+      "freshbooks",
+      "gitea",
+      "gitee",
+      "github",
+      "gitlab",
+      "google",
+      "googleidtoken",
+      "gumroad",
+      "heroku",
+      "hubspot",
+      "imgur",
+      "instagram",
+      "intuit",
+      "jwtbearer",
+      "kakao",
+      "keycloak",
+      "line",
+      "linear",
+      "linkedin",
+      "mailchimp",
+      "mailru",
+      "mastodon",
+      "medium",
+      "meetup",
+      "mercadolibre",
+      "microsoft",
+      "miro",
+      "mixcloud",
+      "monday",
+      "naver",
+      "nightbot",
+      "notion",
+      "oauth1twitter",
+      "okta",
+      "onelogin",
+      "openidconnect",
+      "openstreetmap",
+      "orcid",
+      "osu",
+      "oura",
+      "patreon",
+      "paypal",
+      "pinterest",
+      "pipedrive",
+      "producthunt",
+      "reddit",
+      "refreshjwt",
+      "salesforce",
+      "sentry",
+      "sessionjwt",
+      "shopify",
+      "slack",
+      "smartsheet",
+      "snapchat",
+      "soundcloud",
+      "spotify",
+      "square",
+      "stackexchange",
+      "strava",
+      "streamlabs",
+      "stripe",
+      "surveymonkey",
+      "tiktok",
+      "todoist",
+      "trakt",
+      "twitch",
+      "twitter",
+      "typeform",
+      "uber",
+      "unsplash",
+      "vimeo",
+      "vk",
+      "wakatime",
+      "webex",
+      "webflow",
+      "wechat",
+      "weibo",
+      "whoop",
+      "wordpresscom",
+      "workos",
+      "xero",
+      "yahoo",
+      "yandex",
+      "zendesk",
+      "zoho",
+      "zoom"
+    ]
+  },
+  "strategies": [
+    {
+      "name": "adobe",
+      "repo": "malcolmston/passport-adobe",
+      "module": "github.com/malcolmston/passport-adobe",
+      "legacyImport": "github.com/malcolmston/passport/strategies/adobe",
+      "submodulePath": "strategies/adobe",
+      "layer": 2,
+      "requires": [
+        "github.com/malcolmston/passport",
+        "github.com/malcolmston/passport-oauth2"
+      ],
+      "goFiles": 2,
+      "lines": 56
+    },
+    {
+      "name": "airtable",
+      "repo": "malcolmston/passport-airtable",
+      "module": "github.com/malcolmston/passport-airtable",
+      "legacyImport": "github.com/malcolmston/passport/strategies/airtable",
+      "submodulePath": "strategies/airtable",
+      "layer": 2,
+      "requires": [
+        "github.com/malcolmston/passport",
+        "github.com/malcolmston/passport-oauth2"
+      ],
+      "goFiles": 2,
+      "lines": 56
+    },
+    {
+      "name": "amazon",
+      "repo": "malcolmston/passport-amazon",
+      "module": "github.com/malcolmston/passport-amazon",
+      "legacyImport": "github.com/malcolmston/passport/strategies/amazon",
+      "submodulePath": "strategies/amazon",
+      "layer": 2,
+      "requires": [
+        "github.com/malcolmston/passport",
+        "github.com/malcolmston/passport-oauth2"
+      ],
+      "goFiles": 3,
+      "lines": 138
+    },
+    {
+      "name": "anonymous",
+      "repo": "malcolmston/passport-anonymous",
+      "module": "github.com/malcolmston/passport-anonymous",
+      "legacyImport": "github.com/malcolmston/passport/strategies/anonymous",
+      "submodulePath": "strategies/anonymous",
+      "layer": 1,
+      "requires": [
+        "github.com/malcolmston/passport"
+      ],
+      "goFiles": 4,
+      "lines": 191
+    },
+    {
+      "name": "apikey",
+      "repo": "malcolmston/passport-apikey",
+      "module": "github.com/malcolmston/passport-apikey",
+      "legacyImport": "github.com/malcolmston/passport/strategies/apikey",
+      "submodulePath": "strategies/apikey",
+      "layer": 1,
+      "requires": [
+        "github.com/malcolmston/passport"
+      ],
+      "goFiles": 3,
+      "lines": 270
+    },
+    {
+      "name": "apitoken",
+      "repo": "malcolmston/passport-apitoken",
+      "module": "github.com/malcolmston/passport-apitoken",
+      "legacyImport": "github.com/malcolmston/passport/strategies/apitoken",
+      "submodulePath": "strategies/apitoken",
+      "layer": 1,
+      "requires": [
+        "github.com/malcolmston/passport"
+      ],
+      "goFiles": 3,
+      "lines": 298
+    },
+    {
+      "name": "apple",
+      "repo": "malcolmston/passport-apple",
+      "module": "github.com/malcolmston/passport-apple",
+      "legacyImport": "github.com/malcolmston/passport/strategies/apple",
+      "submodulePath": "strategies/apple",
+      "layer": 2,
+      "requires": [
+        "github.com/malcolmston/passport",
+        "github.com/malcolmston/passport-oauth2"
+      ],
+      "goFiles": 3,
+      "lines": 138
+    },
+    {
+      "name": "arcgis",
+      "repo": "malcolmston/passport-arcgis",
+      "module": "github.com/malcolmston/passport-arcgis",
+      "legacyImport": "github.com/malcolmston/passport/strategies/arcgis",
+      "submodulePath": "strategies/arcgis",
+      "layer": 2,
+      "requires": [
+        "github.com/malcolmston/passport",
+        "github.com/malcolmston/passport-oauth2"
+      ],
+      "goFiles": 2,
+      "lines": 56
+    },
+    {
+      "name": "asana",
+      "repo": "malcolmston/passport-asana",
+      "module": "github.com/malcolmston/passport-asana",
+      "legacyImport": "github.com/malcolmston/passport/strategies/asana",
+      "submodulePath": "strategies/asana",
+      "layer": 2,
+      "requires": [
+        "github.com/malcolmston/passport",
+        "github.com/malcolmston/passport-oauth2"
+      ],
+      "goFiles": 3,
+      "lines": 138
+    },
+    {
+      "name": "atlassian",
+      "repo": "malcolmston/passport-atlassian",
+      "module": "github.com/malcolmston/passport-atlassian",
+      "legacyImport": "github.com/malcolmston/passport/strategies/atlassian",
+      "submodulePath": "strategies/atlassian",
+      "layer": 2,
+      "requires": [
+        "github.com/malcolmston/passport",
+        "github.com/malcolmston/passport-oauth2"
+      ],
+      "goFiles": 3,
+      "lines": 138
+    },
+    {
+      "name": "auth0",
+      "repo": "malcolmston/passport-auth0",
+      "module": "github.com/malcolmston/passport-auth0",
+      "legacyImport": "github.com/malcolmston/passport/strategies/auth0",
+      "submodulePath": "strategies/auth0",
+      "layer": 2,
+      "requires": [
+        "github.com/malcolmston/passport",
+        "github.com/malcolmston/passport-oauth2"
+      ],
+      "goFiles": 3,
+      "lines": 165
+    },
+    {
+      "name": "azuread",
+      "repo": "malcolmston/passport-azuread",
+      "module": "github.com/malcolmston/passport-azuread",
+      "legacyImport": "github.com/malcolmston/passport/strategies/azuread",
+      "submodulePath": "strategies/azuread",
+      "layer": 2,
+      "requires": [
+        "github.com/malcolmston/passport",
+        "github.com/malcolmston/passport-oauth2"
+      ],
+      "goFiles": 3,
+      "lines": 146
+    },
+    {
+      "name": "basic",
+      "repo": "malcolmston/passport-basic",
+      "module": "github.com/malcolmston/passport-basic",
+      "legacyImport": "github.com/malcolmston/passport/strategies/basic",
+      "submodulePath": "strategies/basic",
+      "layer": 1,
+      "requires": [
+        "github.com/malcolmston/passport"
+      ],
+      "goFiles": 4,
+      "lines": 543
+    },
+    {
+      "name": "basicverify",
+      "repo": "malcolmston/passport-basicverify",
+      "module": "github.com/malcolmston/passport-basicverify",
+      "legacyImport": "github.com/malcolmston/passport/strategies/basicverify",
+      "submodulePath": "strategies/basicverify",
+      "layer": 1,
+      "requires": [
+        "github.com/malcolmston/passport"
+      ],
+      "goFiles": 3,
+      "lines": 274
+    },
+    {
+      "name": "battlenet",
+      "repo": "malcolmston/passport-battlenet",
+      "module": "github.com/malcolmston/passport-battlenet",
+      "legacyImport": "github.com/malcolmston/passport/strategies/battlenet",
+      "submodulePath": "strategies/battlenet",
+      "layer": 2,
+      "requires": [
+        "github.com/malcolmston/passport",
+        "github.com/malcolmston/passport-oauth2"
+      ],
+      "goFiles": 2,
+      "lines": 56
+    },
+    {
+      "name": "bearer",
+      "repo": "malcolmston/passport-bearer",
+      "module": "github.com/malcolmston/passport-bearer",
+      "legacyImport": "github.com/malcolmston/passport/strategies/bearer",
+      "submodulePath": "strategies/bearer",
+      "layer": 1,
+      "requires": [
+        "github.com/malcolmston/passport"
+      ],
+      "goFiles": 4,
+      "lines": 585
+    },
+    {
+      "name": "bearertoken",
+      "repo": "malcolmston/passport-bearertoken",
+      "module": "github.com/malcolmston/passport-bearertoken",
+      "legacyImport": "github.com/malcolmston/passport/strategies/bearertoken",
+      "submodulePath": "strategies/bearertoken",
+      "layer": 1,
+      "requires": [
+        "github.com/malcolmston/passport"
+      ],
+      "goFiles": 3,
+      "lines": 247
+    },
+    {
+      "name": "bitbucket",
+      "repo": "malcolmston/passport-bitbucket",
+      "module": "github.com/malcolmston/passport-bitbucket",
+      "legacyImport": "github.com/malcolmston/passport/strategies/bitbucket",
+      "submodulePath": "strategies/bitbucket",
+      "layer": 2,
+      "requires": [
+        "github.com/malcolmston/passport",
+        "github.com/malcolmston/passport-oauth2"
+      ],
+      "goFiles": 3,
+      "lines": 138
+    },
+    {
+      "name": "bitly",
+      "repo": "malcolmston/passport-bitly",
+      "module": "github.com/malcolmston/passport-bitly",
+      "legacyImport": "github.com/malcolmston/passport/strategies/bitly",
+      "submodulePath": "strategies/bitly",
+      "layer": 2,
+      "requires": [
+        "github.com/malcolmston/passport",
+        "github.com/malcolmston/passport-oauth2"
+      ],
+      "goFiles": 2,
+      "lines": 56
+    },
+    {
+      "name": "box",
+      "repo": "malcolmston/passport-box",
+      "module": "github.com/malcolmston/passport-box",
+      "legacyImport": "github.com/malcolmston/passport/strategies/box",
+      "submodulePath": "strategies/box",
+      "layer": 2,
+      "requires": [
+        "github.com/malcolmston/passport",
+        "github.com/malcolmston/passport-oauth2"
+      ],
+      "goFiles": 3,
+      "lines": 138
+    },
+    {
+      "name": "buffer",
+      "repo": "malcolmston/passport-buffer",
+      "module": "github.com/malcolmston/passport-buffer",
+      "legacyImport": "github.com/malcolmston/passport/strategies/buffer",
+      "submodulePath": "strategies/buffer",
+      "layer": 2,
+      "requires": [
+        "github.com/malcolmston/passport",
+        "github.com/malcolmston/passport-oauth2"
+      ],
+      "goFiles": 2,
+      "lines": 56
+    },
+    {
+      "name": "bungie",
+      "repo": "malcolmston/passport-bungie",
+      "module": "github.com/malcolmston/passport-bungie",
+      "legacyImport": "github.com/malcolmston/passport/strategies/bungie",
+      "submodulePath": "strategies/bungie",
+      "layer": 2,
+      "requires": [
+        "github.com/malcolmston/passport",
+        "github.com/malcolmston/passport-oauth2"
+      ],
+      "goFiles": 2,
+      "lines": 56
+    },
+    {
+      "name": "calendly",
+      "repo": "malcolmston/passport-calendly",
+      "module": "github.com/malcolmston/passport-calendly",
+      "legacyImport": "github.com/malcolmston/passport/strategies/calendly",
+      "submodulePath": "strategies/calendly",
+      "layer": 2,
+      "requires": [
+        "github.com/malcolmston/passport",
+        "github.com/malcolmston/passport-oauth2"
+      ],
+      "goFiles": 2,
+      "lines": 56
+    },
+    {
+      "name": "canva",
+      "repo": "malcolmston/passport-canva",
+      "module": "github.com/malcolmston/passport-canva",
+      "legacyImport": "github.com/malcolmston/passport/strategies/canva",
+      "submodulePath": "strategies/canva",
+      "layer": 2,
+      "requires": [
+        "github.com/malcolmston/passport",
+        "github.com/malcolmston/passport-oauth2"
+      ],
+      "goFiles": 2,
+      "lines": 56
+    },
+    {
+      "name": "cas",
+      "repo": "malcolmston/passport-cas",
+      "module": "github.com/malcolmston/passport-cas",
+      "legacyImport": "github.com/malcolmston/passport/strategies/cas",
+      "submodulePath": "strategies/cas",
+      "layer": 1,
+      "requires": [
+        "github.com/malcolmston/passport"
+      ],
+      "goFiles": 3,
+      "lines": 376
+    },
+    {
+      "name": "clickup",
+      "repo": "malcolmston/passport-clickup",
+      "module": "github.com/malcolmston/passport-clickup",
+      "legacyImport": "github.com/malcolmston/passport/strategies/clickup",
+      "submodulePath": "strategies/clickup",
+      "layer": 2,
+      "requires": [
+        "github.com/malcolmston/passport",
+        "github.com/malcolmston/passport-oauth2"
+      ],
+      "goFiles": 3,
+      "lines": 136
+    },
+    {
+      "name": "clientcert",
+      "repo": "malcolmston/passport-clientcert",
+      "module": "github.com/malcolmston/passport-clientcert",
+      "legacyImport": "github.com/malcolmston/passport/strategies/clientcert",
+      "submodulePath": "strategies/clientcert",
+      "layer": 1,
+      "requires": [
+        "github.com/malcolmston/passport"
+      ],
+      "goFiles": 3,
+      "lines": 256
+    },
+    {
+      "name": "clientcredentials",
+      "repo": "malcolmston/passport-clientcredentials",
+      "module": "github.com/malcolmston/passport-clientcredentials",
+      "legacyImport": "github.com/malcolmston/passport/strategies/clientcredentials",
+      "submodulePath": "strategies/clientcredentials",
+      "layer": 1,
+      "requires": [
+        "github.com/malcolmston/passport"
+      ],
+      "goFiles": 3,
+      "lines": 252
+    },
+    {
+      "name": "cognito",
+      "repo": "malcolmston/passport-cognito",
+      "module": "github.com/malcolmston/passport-cognito",
+      "legacyImport": "github.com/malcolmston/passport/strategies/cognito",
+      "submodulePath": "strategies/cognito",
+      "layer": 2,
+      "requires": [
+        "github.com/malcolmston/passport",
+        "github.com/malcolmston/passport-oauth2"
+      ],
+      "goFiles": 3,
+      "lines": 152
+    },
+    {
+      "name": "coinbase",
+      "repo": "malcolmston/passport-coinbase",
+      "module": "github.com/malcolmston/passport-coinbase",
+      "legacyImport": "github.com/malcolmston/passport/strategies/coinbase",
+      "submodulePath": "strategies/coinbase",
+      "layer": 2,
+      "requires": [
+        "github.com/malcolmston/passport",
+        "github.com/malcolmston/passport-oauth2"
+      ],
+      "goFiles": 3,
+      "lines": 136
+    },
+    {
+      "name": "cookietoken",
+      "repo": "malcolmston/passport-cookietoken",
+      "module": "github.com/malcolmston/passport-cookietoken",
+      "legacyImport": "github.com/malcolmston/passport/strategies/cookietoken",
+      "submodulePath": "strategies/cookietoken",
+      "layer": 1,
+      "requires": [
+        "github.com/malcolmston/passport"
+      ],
+      "goFiles": 3,
+      "lines": 243
+    },
+    {
+      "name": "custom",
+      "repo": "malcolmston/passport-custom",
+      "module": "github.com/malcolmston/passport-custom",
+      "legacyImport": "github.com/malcolmston/passport/strategies/custom",
+      "submodulePath": "strategies/custom",
+      "layer": 1,
+      "requires": [
+        "github.com/malcolmston/passport"
+      ],
+      "goFiles": 3,
+      "lines": 218
+    },
+    {
+      "name": "dailymotion",
+      "repo": "malcolmston/passport-dailymotion",
+      "module": "github.com/malcolmston/passport-dailymotion",
+      "legacyImport": "github.com/malcolmston/passport/strategies/dailymotion",
+      "submodulePath": "strategies/dailymotion",
+      "layer": 2,
+      "requires": [
+        "github.com/malcolmston/passport",
+        "github.com/malcolmston/passport-oauth2"
+      ],
+      "goFiles": 2,
+      "lines": 56
+    },
+    {
+      "name": "deezer",
+      "repo": "malcolmston/passport-deezer",
+      "module": "github.com/malcolmston/passport-deezer",
+      "legacyImport": "github.com/malcolmston/passport/strategies/deezer",
+      "submodulePath": "strategies/deezer",
+      "layer": 2,
+      "requires": [
+        "github.com/malcolmston/passport",
+        "github.com/malcolmston/passport-oauth2"
+      ],
+      "goFiles": 3,
+      "lines": 134
+    },
+    {
+      "name": "deviantart",
+      "repo": "malcolmston/passport-deviantart",
+      "module": "github.com/malcolmston/passport-deviantart",
+      "legacyImport": "github.com/malcolmston/passport/strategies/deviantart",
+      "submodulePath": "strategies/deviantart",
+      "layer": 2,
+      "requires": [
+        "github.com/malcolmston/passport",
+        "github.com/malcolmston/passport-oauth2"
+      ],
+      "goFiles": 2,
+      "lines": 56
+    },
+    {
+      "name": "digest",
+      "repo": "malcolmston/passport-digest",
+      "module": "github.com/malcolmston/passport-digest",
+      "legacyImport": "github.com/malcolmston/passport/strategies/digest",
+      "submodulePath": "strategies/digest",
+      "layer": 1,
+      "requires": [
+        "github.com/malcolmston/passport"
+      ],
+      "goFiles": 3,
+      "lines": 399
+    },
+    {
+      "name": "digitalocean",
+      "repo": "malcolmston/passport-digitalocean",
+      "module": "github.com/malcolmston/passport-digitalocean",
+      "legacyImport": "github.com/malcolmston/passport/strategies/digitalocean",
+      "submodulePath": "strategies/digitalocean",
+      "layer": 2,
+      "requires": [
+        "github.com/malcolmston/passport",
+        "github.com/malcolmston/passport-oauth2"
+      ],
+      "goFiles": 3,
+      "lines": 138
+    },
+    {
+      "name": "discord",
+      "repo": "malcolmston/passport-discord",
+      "module": "github.com/malcolmston/passport-discord",
+      "legacyImport": "github.com/malcolmston/passport/strategies/discord",
+      "submodulePath": "strategies/discord",
+      "layer": 2,
+      "requires": [
+        "github.com/malcolmston/passport",
+        "github.com/malcolmston/passport-oauth2"
+      ],
+      "goFiles": 3,
+      "lines": 137
+    },
+    {
+      "name": "docusign",
+      "repo": "malcolmston/passport-docusign",
+      "module": "github.com/malcolmston/passport-docusign",
+      "legacyImport": "github.com/malcolmston/passport/strategies/docusign",
+      "submodulePath": "strategies/docusign",
+      "layer": 2,
+      "requires": [
+        "github.com/malcolmston/passport",
+        "github.com/malcolmston/passport-oauth2"
+      ],
+      "goFiles": 3,
+      "lines": 135
+    },
+    {
+      "name": "dropbox",
+      "repo": "malcolmston/passport-dropbox",
+      "module": "github.com/malcolmston/passport-dropbox",
+      "legacyImport": "github.com/malcolmston/passport/strategies/dropbox",
+      "submodulePath": "strategies/dropbox",
+      "layer": 2,
+      "requires": [
+        "github.com/malcolmston/passport",
+        "github.com/malcolmston/passport-oauth2"
+      ],
+      "goFiles": 3,
+      "lines": 140
+    },
+    {
+      "name": "ebay",
+      "repo": "malcolmston/passport-ebay",
+      "module": "github.com/malcolmston/passport-ebay",
+      "legacyImport": "github.com/malcolmston/passport/strategies/ebay",
+      "submodulePath": "strategies/ebay",
+      "layer": 2,
+      "requires": [
+        "github.com/malcolmston/passport",
+        "github.com/malcolmston/passport-oauth2"
+      ],
+      "goFiles": 2,
+      "lines": 56
+    },
+    {
+      "name": "epicgames",
+      "repo": "malcolmston/passport-epicgames",
+      "module": "github.com/malcolmston/passport-epicgames",
+      "legacyImport": "github.com/malcolmston/passport/strategies/epicgames",
+      "submodulePath": "strategies/epicgames",
+      "layer": 2,
+      "requires": [
+        "github.com/malcolmston/passport",
+        "github.com/malcolmston/passport-oauth2"
+      ],
+      "goFiles": 2,
+      "lines": 56
+    },
+    {
+      "name": "etsy",
+      "repo": "malcolmston/passport-etsy",
+      "module": "github.com/malcolmston/passport-etsy",
+      "legacyImport": "github.com/malcolmston/passport/strategies/etsy",
+      "submodulePath": "strategies/etsy",
+      "layer": 2,
+      "requires": [
+        "github.com/malcolmston/passport",
+        "github.com/malcolmston/passport-oauth2"
+      ],
+      "goFiles": 3,
+      "lines": 132
+    },
+    {
+      "name": "eventbrite",
+      "repo": "malcolmston/passport-eventbrite",
+      "module": "github.com/malcolmston/passport-eventbrite",
+      "legacyImport": "github.com/malcolmston/passport/strategies/eventbrite",
+      "submodulePath": "strategies/eventbrite",
+      "layer": 2,
+      "requires": [
+        "github.com/malcolmston/passport",
+        "github.com/malcolmston/passport-oauth2"
+      ],
+      "goFiles": 3,
+      "lines": 130
+    },
+    {
+      "name": "facebook",
+      "repo": "malcolmston/passport-facebook",
+      "module": "github.com/malcolmston/passport-facebook",
+      "legacyImport": "github.com/malcolmston/passport/strategies/facebook",
+      "submodulePath": "strategies/facebook",
+      "layer": 2,
+      "requires": [
+        "github.com/malcolmston/passport",
+        "github.com/malcolmston/passport-oauth2"
+      ],
+      "goFiles": 3,
+      "lines": 139
+    },
+    {
+      "name": "feedly",
+      "repo": "malcolmston/passport-feedly",
+      "module": "github.com/malcolmston/passport-feedly",
+      "legacyImport": "github.com/malcolmston/passport/strategies/feedly",
+      "submodulePath": "strategies/feedly",
+      "layer": 2,
+      "requires": [
+        "github.com/malcolmston/passport",
+        "github.com/malcolmston/passport-oauth2"
+      ],
+      "goFiles": 2,
+      "lines": 56
+    },
+    {
+      "name": "figma",
+      "repo": "malcolmston/passport-figma",
+      "module": "github.com/malcolmston/passport-figma",
+      "legacyImport": "github.com/malcolmston/passport/strategies/figma",
+      "submodulePath": "strategies/figma",
+      "layer": 2,
+      "requires": [
+        "github.com/malcolmston/passport",
+        "github.com/malcolmston/passport-oauth2"
+      ],
+      "goFiles": 3,
+      "lines": 136
+    },
+    {
+      "name": "fitbit",
+      "repo": "malcolmston/passport-fitbit",
+      "module": "github.com/malcolmston/passport-fitbit",
+      "legacyImport": "github.com/malcolmston/passport/strategies/fitbit",
+      "submodulePath": "strategies/fitbit",
+      "layer": 2,
+      "requires": [
+        "github.com/malcolmston/passport",
+        "github.com/malcolmston/passport-oauth2"
+      ],
+      "goFiles": 3,
+      "lines": 140
+    },
+    {
+      "name": "fortytwo",
+      "repo": "malcolmston/passport-fortytwo",
+      "module": "github.com/malcolmston/passport-fortytwo",
+      "legacyImport": "github.com/malcolmston/passport/strategies/fortytwo",
+      "submodulePath": "strategies/fortytwo",
+      "layer": 2,
+      "requires": [
+        "github.com/malcolmston/passport",
+        "github.com/malcolmston/passport-oauth2"
+      ],
+      "goFiles": 3,
+      "lines": 132
+    },
+    {
+      "name": "foursquare",
+      "repo": "malcolmston/passport-foursquare",
+      "module": "github.com/malcolmston/passport-foursquare",
+      "legacyImport": "github.com/malcolmston/passport/strategies/foursquare",
+      "submodulePath": "strategies/foursquare",
+      "layer": 2,
+      "requires": [
+        "github.com/malcolmston/passport",
+        "github.com/malcolmston/passport-oauth2"
+      ],
+      "goFiles": 3,
+      "lines": 133
+    },
+    {
+      "name": "freshbooks",
+      "repo": "malcolmston/passport-freshbooks",
+      "module": "github.com/malcolmston/passport-freshbooks",
+      "legacyImport": "github.com/malcolmston/passport/strategies/freshbooks",
+      "submodulePath": "strategies/freshbooks",
+      "layer": 2,
+      "requires": [
+        "github.com/malcolmston/passport",
+        "github.com/malcolmston/passport-oauth2"
+      ],
+      "goFiles": 2,
+      "lines": 56
+    },
+    {
+      "name": "gitea",
+      "repo": "malcolmston/passport-gitea",
+      "module": "github.com/malcolmston/passport-gitea",
+      "legacyImport": "github.com/malcolmston/passport/strategies/gitea",
+      "submodulePath": "strategies/gitea",
+      "layer": 2,
+      "requires": [
+        "github.com/malcolmston/passport",
+        "github.com/malcolmston/passport-oauth2"
+      ],
+      "goFiles": 3,
+      "lines": 150
+    },
+    {
+      "name": "gitee",
+      "repo": "malcolmston/passport-gitee",
+      "module": "github.com/malcolmston/passport-gitee",
+      "legacyImport": "github.com/malcolmston/passport/strategies/gitee",
+      "submodulePath": "strategies/gitee",
+      "layer": 2,
+      "requires": [
+        "github.com/malcolmston/passport",
+        "github.com/malcolmston/passport-oauth2"
+      ],
+      "goFiles": 2,
+      "lines": 56
+    },
+    {
+      "name": "github",
+      "repo": "malcolmston/passport-github",
+      "module": "github.com/malcolmston/passport-github",
+      "legacyImport": "github.com/malcolmston/passport/strategies/github",
+      "submodulePath": "strategies/github",
+      "layer": 2,
+      "requires": [
+        "github.com/malcolmston/passport",
+        "github.com/malcolmston/passport-oauth2"
+      ],
+      "goFiles": 3,
+      "lines": 135
+    },
+    {
+      "name": "gitlab",
+      "repo": "malcolmston/passport-gitlab",
+      "module": "github.com/malcolmston/passport-gitlab",
+      "legacyImport": "github.com/malcolmston/passport/strategies/gitlab",
+      "submodulePath": "strategies/gitlab",
+      "layer": 2,
+      "requires": [
+        "github.com/malcolmston/passport",
+        "github.com/malcolmston/passport-oauth2"
+      ],
+      "goFiles": 3,
+      "lines": 136
+    },
+    {
+      "name": "google",
+      "repo": "malcolmston/passport-google",
+      "module": "github.com/malcolmston/passport-google",
+      "legacyImport": "github.com/malcolmston/passport/strategies/google",
+      "submodulePath": "strategies/google",
+      "layer": 2,
+      "requires": [
+        "github.com/malcolmston/passport",
+        "github.com/malcolmston/passport-oauth2"
+      ],
+      "goFiles": 3,
+      "lines": 135
+    },
+    {
+      "name": "googleidtoken",
+      "repo": "malcolmston/passport-googleidtoken",
+      "module": "github.com/malcolmston/passport-googleidtoken",
+      "legacyImport": "github.com/malcolmston/passport/strategies/googleidtoken",
+      "submodulePath": "strategies/googleidtoken",
+      "layer": 2,
+      "requires": [
+        "github.com/malcolmston/passport",
+        "github.com/malcolmston/passport-jwks",
+        "github.com/malcolmston/passport-jwt"
+      ],
+      "goFiles": 3,
+      "lines": 325
+    },
+    {
+      "name": "gumroad",
+      "repo": "malcolmston/passport-gumroad",
+      "module": "github.com/malcolmston/passport-gumroad",
+      "legacyImport": "github.com/malcolmston/passport/strategies/gumroad",
+      "submodulePath": "strategies/gumroad",
+      "layer": 2,
+      "requires": [
+        "github.com/malcolmston/passport",
+        "github.com/malcolmston/passport-oauth2"
+      ],
+      "goFiles": 3,
+      "lines": 140
+    },
+    {
+      "name": "headertoken",
+      "repo": "malcolmston/passport-headertoken",
+      "module": "github.com/malcolmston/passport-headertoken",
+      "legacyImport": "github.com/malcolmston/passport/strategies/headertoken",
+      "submodulePath": "strategies/headertoken",
+      "layer": 1,
+      "requires": [
+        "github.com/malcolmston/passport"
+      ],
+      "goFiles": 3,
+      "lines": 242
+    },
+    {
+      "name": "heroku",
+      "repo": "malcolmston/passport-heroku",
+      "module": "github.com/malcolmston/passport-heroku",
+      "legacyImport": "github.com/malcolmston/passport/strategies/heroku",
+      "submodulePath": "strategies/heroku",
+      "layer": 2,
+      "requires": [
+        "github.com/malcolmston/passport",
+        "github.com/malcolmston/passport-oauth2"
+      ],
+      "goFiles": 3,
+      "lines": 142
+    },
+    {
+      "name": "hmac",
+      "repo": "malcolmston/passport-hmac",
+      "module": "github.com/malcolmston/passport-hmac",
+      "legacyImport": "github.com/malcolmston/passport/strategies/hmac",
+      "submodulePath": "strategies/hmac",
+      "layer": 1,
+      "requires": [
+        "github.com/malcolmston/passport"
+      ],
+      "goFiles": 4,
+      "lines": 522
+    },
+    {
+      "name": "hotp",
+      "repo": "malcolmston/passport-hotp",
+      "module": "github.com/malcolmston/passport-hotp",
+      "legacyImport": "github.com/malcolmston/passport/strategies/hotp",
+      "submodulePath": "strategies/hotp",
+      "layer": 1,
+      "requires": [
+        "github.com/malcolmston/passport"
+      ],
+      "goFiles": 4,
+      "lines": 413
+    },
+    {
+      "name": "hubspot",
+      "repo": "malcolmston/passport-hubspot",
+      "module": "github.com/malcolmston/passport-hubspot",
+      "legacyImport": "github.com/malcolmston/passport/strategies/hubspot",
+      "submodulePath": "strategies/hubspot",
+      "layer": 2,
+      "requires": [
+        "github.com/malcolmston/passport",
+        "github.com/malcolmston/passport-oauth2"
+      ],
+      "goFiles": 3,
+      "lines": 143
+    },
+    {
+      "name": "imgur",
+      "repo": "malcolmston/passport-imgur",
+      "module": "github.com/malcolmston/passport-imgur",
+      "legacyImport": "github.com/malcolmston/passport/strategies/imgur",
+      "submodulePath": "strategies/imgur",
+      "layer": 2,
+      "requires": [
+        "github.com/malcolmston/passport",
+        "github.com/malcolmston/passport-oauth2"
+      ],
+      "goFiles": 3,
+      "lines": 137
+    },
+    {
+      "name": "instagram",
+      "repo": "malcolmston/passport-instagram",
+      "module": "github.com/malcolmston/passport-instagram",
+      "legacyImport": "github.com/malcolmston/passport/strategies/instagram",
+      "submodulePath": "strategies/instagram",
+      "layer": 2,
+      "requires": [
+        "github.com/malcolmston/passport",
+        "github.com/malcolmston/passport-oauth2"
+      ],
+      "goFiles": 3,
+      "lines": 142
+    },
+    {
+      "name": "intuit",
+      "repo": "malcolmston/passport-intuit",
+      "module": "github.com/malcolmston/passport-intuit",
+      "legacyImport": "github.com/malcolmston/passport/strategies/intuit",
+      "submodulePath": "strategies/intuit",
+      "layer": 2,
+      "requires": [
+        "github.com/malcolmston/passport",
+        "github.com/malcolmston/passport-oauth2"
+      ],
+      "goFiles": 2,
+      "lines": 56
+    },
+    {
+      "name": "jwks",
+      "repo": "malcolmston/passport-jwks",
+      "module": "github.com/malcolmston/passport-jwks",
+      "legacyImport": "github.com/malcolmston/passport/strategies/jwks",
+      "submodulePath": "strategies/jwks",
+      "layer": 1,
+      "requires": [
+        "github.com/malcolmston/passport"
+      ],
+      "goFiles": 8,
+      "lines": 1848
+    },
+    {
+      "name": "jwt",
+      "repo": "malcolmston/passport-jwt",
+      "module": "github.com/malcolmston/passport-jwt",
+      "legacyImport": "github.com/malcolmston/passport/strategies/jwt",
+      "submodulePath": "strategies/jwt",
+      "layer": 1,
+      "requires": [
+        "github.com/malcolmston/passport"
+      ],
+      "goFiles": 4,
+      "lines": 791
+    },
+    {
+      "name": "jwtbearer",
+      "repo": "malcolmston/passport-jwtbearer",
+      "module": "github.com/malcolmston/passport-jwtbearer",
+      "legacyImport": "github.com/malcolmston/passport/strategies/jwtbearer",
+      "submodulePath": "strategies/jwtbearer",
+      "layer": 2,
+      "requires": [
+        "github.com/malcolmston/passport",
+        "github.com/malcolmston/passport-jwks",
+        "github.com/malcolmston/passport-jwt"
+      ],
+      "goFiles": 3,
+      "lines": 279
+    },
+    {
+      "name": "kakao",
+      "repo": "malcolmston/passport-kakao",
+      "module": "github.com/malcolmston/passport-kakao",
+      "legacyImport": "github.com/malcolmston/passport/strategies/kakao",
+      "submodulePath": "strategies/kakao",
+      "layer": 2,
+      "requires": [
+        "github.com/malcolmston/passport",
+        "github.com/malcolmston/passport-oauth2"
+      ],
+      "goFiles": 3,
+      "lines": 126
+    },
+    {
+      "name": "keycloak",
+      "repo": "malcolmston/passport-keycloak",
+      "module": "github.com/malcolmston/passport-keycloak",
+      "legacyImport": "github.com/malcolmston/passport/strategies/keycloak",
+      "submodulePath": "strategies/keycloak",
+      "layer": 2,
+      "requires": [
+        "github.com/malcolmston/passport",
+        "github.com/malcolmston/passport-oauth2"
+      ],
+      "goFiles": 3,
+      "lines": 143
+    },
+    {
+      "name": "ldap",
+      "repo": "malcolmston/passport-ldap",
+      "module": "github.com/malcolmston/passport-ldap",
+      "legacyImport": "github.com/malcolmston/passport/strategies/ldap",
+      "submodulePath": "strategies/ldap",
+      "layer": 1,
+      "requires": [
+        "github.com/malcolmston/passport"
+      ],
+      "goFiles": 3,
+      "lines": 293
+    },
+    {
+      "name": "line",
+      "repo": "malcolmston/passport-line",
+      "module": "github.com/malcolmston/passport-line",
+      "legacyImport": "github.com/malcolmston/passport/strategies/line",
+      "submodulePath": "strategies/line",
+      "layer": 2,
+      "requires": [
+        "github.com/malcolmston/passport",
+        "github.com/malcolmston/passport-oauth2"
+      ],
+      "goFiles": 3,
+      "lines": 126
+    },
+    {
+      "name": "linear",
+      "repo": "malcolmston/passport-linear",
+      "module": "github.com/malcolmston/passport-linear",
+      "legacyImport": "github.com/malcolmston/passport/strategies/linear",
+      "submodulePath": "strategies/linear",
+      "layer": 2,
+      "requires": [
+        "github.com/malcolmston/passport",
+        "github.com/malcolmston/passport-oauth2"
+      ],
+      "goFiles": 2,
+      "lines": 56
+    },
+    {
+      "name": "linkedin",
+      "repo": "malcolmston/passport-linkedin",
+      "module": "github.com/malcolmston/passport-linkedin",
+      "legacyImport": "github.com/malcolmston/passport/strategies/linkedin",
+      "submodulePath": "strategies/linkedin",
+      "layer": 2,
+      "requires": [
+        "github.com/malcolmston/passport",
+        "github.com/malcolmston/passport-oauth2"
+      ],
+      "goFiles": 3,
+      "lines": 128
+    },
+    {
+      "name": "local",
+      "repo": "malcolmston/passport-local",
+      "module": "github.com/malcolmston/passport-local",
+      "legacyImport": "github.com/malcolmston/passport/strategies/local",
+      "submodulePath": "strategies/local",
+      "layer": 1,
+      "requires": [
+        "github.com/malcolmston/passport"
+      ],
+      "goFiles": 3,
+      "lines": 403
+    },
+    {
+      "name": "magiclink",
+      "repo": "malcolmston/passport-magiclink",
+      "module": "github.com/malcolmston/passport-magiclink",
+      "legacyImport": "github.com/malcolmston/passport/strategies/magiclink",
+      "submodulePath": "strategies/magiclink",
+      "layer": 1,
+      "requires": [
+        "github.com/malcolmston/passport"
+      ],
+      "goFiles": 4,
+      "lines": 412
+    },
+    {
+      "name": "mailchimp",
+      "repo": "malcolmston/passport-mailchimp",
+      "module": "github.com/malcolmston/passport-mailchimp",
+      "legacyImport": "github.com/malcolmston/passport/strategies/mailchimp",
+      "submodulePath": "strategies/mailchimp",
+      "layer": 2,
+      "requires": [
+        "github.com/malcolmston/passport",
+        "github.com/malcolmston/passport-oauth2"
+      ],
+      "goFiles": 3,
+      "lines": 127
+    },
+    {
+      "name": "mailru",
+      "repo": "malcolmston/passport-mailru",
+      "module": "github.com/malcolmston/passport-mailru",
+      "legacyImport": "github.com/malcolmston/passport/strategies/mailru",
+      "submodulePath": "strategies/mailru",
+      "layer": 2,
+      "requires": [
+        "github.com/malcolmston/passport",
+        "github.com/malcolmston/passport-oauth2"
+      ],
+      "goFiles": 2,
+      "lines": 56
+    },
+    {
+      "name": "mastodon",
+      "repo": "malcolmston/passport-mastodon",
+      "module": "github.com/malcolmston/passport-mastodon",
+      "legacyImport": "github.com/malcolmston/passport/strategies/mastodon",
+      "submodulePath": "strategies/mastodon",
+      "layer": 2,
+      "requires": [
+        "github.com/malcolmston/passport",
+        "github.com/malcolmston/passport-oauth2"
+      ],
+      "goFiles": 3,
+      "lines": 139
+    },
+    {
+      "name": "medium",
+      "repo": "malcolmston/passport-medium",
+      "module": "github.com/malcolmston/passport-medium",
+      "legacyImport": "github.com/malcolmston/passport/strategies/medium",
+      "submodulePath": "strategies/medium",
+      "layer": 2,
+      "requires": [
+        "github.com/malcolmston/passport",
+        "github.com/malcolmston/passport-oauth2"
+      ],
+      "goFiles": 2,
+      "lines": 56
+    },
+    {
+      "name": "meetup",
+      "repo": "malcolmston/passport-meetup",
+      "module": "github.com/malcolmston/passport-meetup",
+      "legacyImport": "github.com/malcolmston/passport/strategies/meetup",
+      "submodulePath": "strategies/meetup",
+      "layer": 2,
+      "requires": [
+        "github.com/malcolmston/passport",
+        "github.com/malcolmston/passport-oauth2"
+      ],
+      "goFiles": 3,
+      "lines": 124
+    },
+    {
+      "name": "mercadolibre",
+      "repo": "malcolmston/passport-mercadolibre",
+      "module": "github.com/malcolmston/passport-mercadolibre",
+      "legacyImport": "github.com/malcolmston/passport/strategies/mercadolibre",
+      "submodulePath": "strategies/mercadolibre",
+      "layer": 2,
+      "requires": [
+        "github.com/malcolmston/passport",
+        "github.com/malcolmston/passport-oauth2"
+      ],
+      "goFiles": 2,
+      "lines": 56
+    },
+    {
+      "name": "microsoft",
+      "repo": "malcolmston/passport-microsoft",
+      "module": "github.com/malcolmston/passport-microsoft",
+      "legacyImport": "github.com/malcolmston/passport/strategies/microsoft",
+      "submodulePath": "strategies/microsoft",
+      "layer": 2,
+      "requires": [
+        "github.com/malcolmston/passport",
+        "github.com/malcolmston/passport-oauth2"
+      ],
+      "goFiles": 3,
+      "lines": 130
+    },
+    {
+      "name": "miro",
+      "repo": "malcolmston/passport-miro",
+      "module": "github.com/malcolmston/passport-miro",
+      "legacyImport": "github.com/malcolmston/passport/strategies/miro",
+      "submodulePath": "strategies/miro",
+      "layer": 2,
+      "requires": [
+        "github.com/malcolmston/passport",
+        "github.com/malcolmston/passport-oauth2"
+      ],
+      "goFiles": 2,
+      "lines": 56
+    },
+    {
+      "name": "mixcloud",
+      "repo": "malcolmston/passport-mixcloud",
+      "module": "github.com/malcolmston/passport-mixcloud",
+      "legacyImport": "github.com/malcolmston/passport/strategies/mixcloud",
+      "submodulePath": "strategies/mixcloud",
+      "layer": 2,
+      "requires": [
+        "github.com/malcolmston/passport",
+        "github.com/malcolmston/passport-oauth2"
+      ],
+      "goFiles": 3,
+      "lines": 123
+    },
+    {
+      "name": "monday",
+      "repo": "malcolmston/passport-monday",
+      "module": "github.com/malcolmston/passport-monday",
+      "legacyImport": "github.com/malcolmston/passport/strategies/monday",
+      "submodulePath": "strategies/monday",
+      "layer": 2,
+      "requires": [
+        "github.com/malcolmston/passport",
+        "github.com/malcolmston/passport-oauth2"
+      ],
+      "goFiles": 3,
+      "lines": 126
+    },
+    {
+      "name": "naver",
+      "repo": "malcolmston/passport-naver",
+      "module": "github.com/malcolmston/passport-naver",
+      "legacyImport": "github.com/malcolmston/passport/strategies/naver",
+      "submodulePath": "strategies/naver",
+      "layer": 2,
+      "requires": [
+        "github.com/malcolmston/passport",
+        "github.com/malcolmston/passport-oauth2"
+      ],
+      "goFiles": 3,
+      "lines": 126
+    },
+    {
+      "name": "nightbot",
+      "repo": "malcolmston/passport-nightbot",
+      "module": "github.com/malcolmston/passport-nightbot",
+      "legacyImport": "github.com/malcolmston/passport/strategies/nightbot",
+      "submodulePath": "strategies/nightbot",
+      "layer": 2,
+      "requires": [
+        "github.com/malcolmston/passport",
+        "github.com/malcolmston/passport-oauth2"
+      ],
+      "goFiles": 2,
+      "lines": 56
+    },
+    {
+      "name": "notion",
+      "repo": "malcolmston/passport-notion",
+      "module": "github.com/malcolmston/passport-notion",
+      "legacyImport": "github.com/malcolmston/passport/strategies/notion",
+      "submodulePath": "strategies/notion",
+      "layer": 2,
+      "requires": [
+        "github.com/malcolmston/passport",
+        "github.com/malcolmston/passport-oauth2"
+      ],
+      "goFiles": 3,
+      "lines": 130
+    },
+    {
+      "name": "oauth1",
+      "repo": "malcolmston/passport-oauth1",
+      "module": "github.com/malcolmston/passport-oauth1",
+      "legacyImport": "github.com/malcolmston/passport/strategies/oauth1",
+      "submodulePath": "strategies/oauth1",
+      "layer": 1,
+      "requires": [
+        "github.com/malcolmston/passport"
+      ],
+      "goFiles": 3,
+      "lines": 517
+    },
+    {
+      "name": "oauth1twitter",
+      "repo": "malcolmston/passport-oauth1twitter",
+      "module": "github.com/malcolmston/passport-oauth1twitter",
+      "legacyImport": "github.com/malcolmston/passport/strategies/oauth1twitter",
+      "submodulePath": "strategies/oauth1twitter",
+      "layer": 2,
+      "requires": [
+        "github.com/malcolmston/passport",
+        "github.com/malcolmston/passport-oauth1"
+      ],
+      "goFiles": 3,
+      "lines": 165
+    },
+    {
+      "name": "oauth2",
+      "repo": "malcolmston/passport-oauth2",
+      "module": "github.com/malcolmston/passport-oauth2",
+      "legacyImport": "github.com/malcolmston/passport/strategies/oauth2",
+      "submodulePath": "strategies/oauth2",
+      "layer": 1,
+      "requires": [
+        "github.com/malcolmston/passport"
+      ],
+      "goFiles": 3,
+      "lines": 543
+    },
+    {
+      "name": "okta",
+      "repo": "malcolmston/passport-okta",
+      "module": "github.com/malcolmston/passport-okta",
+      "legacyImport": "github.com/malcolmston/passport/strategies/okta",
+      "submodulePath": "strategies/okta",
+      "layer": 2,
+      "requires": [
+        "github.com/malcolmston/passport",
+        "github.com/malcolmston/passport-oauth2"
+      ],
+      "goFiles": 3,
+      "lines": 159
+    },
+    {
+      "name": "onelogin",
+      "repo": "malcolmston/passport-onelogin",
+      "module": "github.com/malcolmston/passport-onelogin",
+      "legacyImport": "github.com/malcolmston/passport/strategies/onelogin",
+      "submodulePath": "strategies/onelogin",
+      "layer": 2,
+      "requires": [
+        "github.com/malcolmston/passport",
+        "github.com/malcolmston/passport-oauth2"
+      ],
+      "goFiles": 3,
+      "lines": 142
+    },
+    {
+      "name": "openidconnect",
+      "repo": "malcolmston/passport-openidconnect",
+      "module": "github.com/malcolmston/passport-openidconnect",
+      "legacyImport": "github.com/malcolmston/passport/strategies/openidconnect",
+      "submodulePath": "strategies/openidconnect",
+      "layer": 2,
+      "requires": [
+        "github.com/malcolmston/passport",
+        "github.com/malcolmston/passport-jwks",
+        "github.com/malcolmston/passport-jwt"
+      ],
+      "goFiles": 5,
+      "lines": 769
+    },
+    {
+      "name": "openstreetmap",
+      "repo": "malcolmston/passport-openstreetmap",
+      "module": "github.com/malcolmston/passport-openstreetmap",
+      "legacyImport": "github.com/malcolmston/passport/strategies/openstreetmap",
+      "submodulePath": "strategies/openstreetmap",
+      "layer": 2,
+      "requires": [
+        "github.com/malcolmston/passport",
+        "github.com/malcolmston/passport-oauth2"
+      ],
+      "goFiles": 2,
+      "lines": 56
+    },
+    {
+      "name": "orcid",
+      "repo": "malcolmston/passport-orcid",
+      "module": "github.com/malcolmston/passport-orcid",
+      "legacyImport": "github.com/malcolmston/passport/strategies/orcid",
+      "submodulePath": "strategies/orcid",
+      "layer": 2,
+      "requires": [
+        "github.com/malcolmston/passport",
+        "github.com/malcolmston/passport-oauth2"
+      ],
+      "goFiles": 2,
+      "lines": 56
+    },
+    {
+      "name": "osu",
+      "repo": "malcolmston/passport-osu",
+      "module": "github.com/malcolmston/passport-osu",
+      "legacyImport": "github.com/malcolmston/passport/strategies/osu",
+      "submodulePath": "strategies/osu",
+      "layer": 2,
+      "requires": [
+        "github.com/malcolmston/passport",
+        "github.com/malcolmston/passport-oauth2"
+      ],
+      "goFiles": 2,
+      "lines": 56
+    },
+    {
+      "name": "oura",
+      "repo": "malcolmston/passport-oura",
+      "module": "github.com/malcolmston/passport-oura",
+      "legacyImport": "github.com/malcolmston/passport/strategies/oura",
+      "submodulePath": "strategies/oura",
+      "layer": 2,
+      "requires": [
+        "github.com/malcolmston/passport",
+        "github.com/malcolmston/passport-oauth2"
+      ],
+      "goFiles": 2,
+      "lines": 56
+    },
+    {
+      "name": "patreon",
+      "repo": "malcolmston/passport-patreon",
+      "module": "github.com/malcolmston/passport-patreon",
+      "legacyImport": "github.com/malcolmston/passport/strategies/patreon",
+      "submodulePath": "strategies/patreon",
+      "layer": 2,
+      "requires": [
+        "github.com/malcolmston/passport",
+        "github.com/malcolmston/passport-oauth2"
+      ],
+      "goFiles": 3,
+      "lines": 130
+    },
+    {
+      "name": "paypal",
+      "repo": "malcolmston/passport-paypal",
+      "module": "github.com/malcolmston/passport-paypal",
+      "legacyImport": "github.com/malcolmston/passport/strategies/paypal",
+      "submodulePath": "strategies/paypal",
+      "layer": 2,
+      "requires": [
+        "github.com/malcolmston/passport",
+        "github.com/malcolmston/passport-oauth2"
+      ],
+      "goFiles": 3,
+      "lines": 131
+    },
+    {
+      "name": "pinterest",
+      "repo": "malcolmston/passport-pinterest",
+      "module": "github.com/malcolmston/passport-pinterest",
+      "legacyImport": "github.com/malcolmston/passport/strategies/pinterest",
+      "submodulePath": "strategies/pinterest",
+      "layer": 2,
+      "requires": [
+        "github.com/malcolmston/passport",
+        "github.com/malcolmston/passport-oauth2"
+      ],
+      "goFiles": 3,
+      "lines": 131
+    },
+    {
+      "name": "pipedrive",
+      "repo": "malcolmston/passport-pipedrive",
+      "module": "github.com/malcolmston/passport-pipedrive",
+      "legacyImport": "github.com/malcolmston/passport/strategies/pipedrive",
+      "submodulePath": "strategies/pipedrive",
+      "layer": 2,
+      "requires": [
+        "github.com/malcolmston/passport",
+        "github.com/malcolmston/passport-oauth2"
+      ],
+      "goFiles": 2,
+      "lines": 56
+    },
+    {
+      "name": "producthunt",
+      "repo": "malcolmston/passport-producthunt",
+      "module": "github.com/malcolmston/passport-producthunt",
+      "legacyImport": "github.com/malcolmston/passport/strategies/producthunt",
+      "submodulePath": "strategies/producthunt",
+      "layer": 2,
+      "requires": [
+        "github.com/malcolmston/passport",
+        "github.com/malcolmston/passport-oauth2"
+      ],
+      "goFiles": 2,
+      "lines": 56
+    },
+    {
+      "name": "querytoken",
+      "repo": "malcolmston/passport-querytoken",
+      "module": "github.com/malcolmston/passport-querytoken",
+      "legacyImport": "github.com/malcolmston/passport/strategies/querytoken",
+      "submodulePath": "strategies/querytoken",
+      "layer": 1,
+      "requires": [
+        "github.com/malcolmston/passport"
+      ],
+      "goFiles": 3,
+      "lines": 228
+    },
+    {
+      "name": "reddit",
+      "repo": "malcolmston/passport-reddit",
+      "module": "github.com/malcolmston/passport-reddit",
+      "legacyImport": "github.com/malcolmston/passport/strategies/reddit",
+      "submodulePath": "strategies/reddit",
+      "layer": 2,
+      "requires": [
+        "github.com/malcolmston/passport",
+        "github.com/malcolmston/passport-oauth2"
+      ],
+      "goFiles": 3,
+      "lines": 130
+    },
+    {
+      "name": "refreshjwt",
+      "repo": "malcolmston/passport-refreshjwt",
+      "module": "github.com/malcolmston/passport-refreshjwt",
+      "legacyImport": "github.com/malcolmston/passport/strategies/refreshjwt",
+      "submodulePath": "strategies/refreshjwt",
+      "layer": 2,
+      "requires": [
+        "github.com/malcolmston/passport",
+        "github.com/malcolmston/passport-jwt"
+      ],
+      "goFiles": 3,
+      "lines": 282
+    },
+    {
+      "name": "refreshtoken",
+      "repo": "malcolmston/passport-refreshtoken",
+      "module": "github.com/malcolmston/passport-refreshtoken",
+      "legacyImport": "github.com/malcolmston/passport/strategies/refreshtoken",
+      "submodulePath": "strategies/refreshtoken",
+      "layer": 1,
+      "requires": [
+        "github.com/malcolmston/passport"
+      ],
+      "goFiles": 4,
+      "lines": 371
+    },
+    {
+      "name": "remembercookie",
+      "repo": "malcolmston/passport-remembercookie",
+      "module": "github.com/malcolmston/passport-remembercookie",
+      "legacyImport": "github.com/malcolmston/passport/strategies/remembercookie",
+      "submodulePath": "strategies/remembercookie",
+      "layer": 1,
+      "requires": [
+        "github.com/malcolmston/passport"
+      ],
+      "goFiles": 4,
+      "lines": 436
+    },
+    {
+      "name": "salesforce",
+      "repo": "malcolmston/passport-salesforce",
+      "module": "github.com/malcolmston/passport-salesforce",
+      "legacyImport": "github.com/malcolmston/passport/strategies/salesforce",
+      "submodulePath": "strategies/salesforce",
+      "layer": 2,
+      "requires": [
+        "github.com/malcolmston/passport",
+        "github.com/malcolmston/passport-oauth2"
+      ],
+      "goFiles": 3,
+      "lines": 148
+    },
+    {
+      "name": "saml",
+      "repo": "malcolmston/passport-saml",
+      "module": "github.com/malcolmston/passport-saml",
+      "legacyImport": "github.com/malcolmston/passport/strategies/saml",
+      "submodulePath": "strategies/saml",
+      "layer": 1,
+      "requires": [
+        "github.com/malcolmston/passport"
+      ],
+      "goFiles": 22,
+      "lines": 14195
+    },
+    {
+      "name": "sentry",
+      "repo": "malcolmston/passport-sentry",
+      "module": "github.com/malcolmston/passport-sentry",
+      "legacyImport": "github.com/malcolmston/passport/strategies/sentry",
+      "submodulePath": "strategies/sentry",
+      "layer": 2,
+      "requires": [
+        "github.com/malcolmston/passport",
+        "github.com/malcolmston/passport-oauth2"
+      ],
+      "goFiles": 2,
+      "lines": 56
+    },
+    {
+      "name": "sessionjwt",
+      "repo": "malcolmston/passport-sessionjwt",
+      "module": "github.com/malcolmston/passport-sessionjwt",
+      "legacyImport": "github.com/malcolmston/passport/strategies/sessionjwt",
+      "submodulePath": "strategies/sessionjwt",
+      "layer": 2,
+      "requires": [
+        "github.com/malcolmston/passport",
+        "github.com/malcolmston/passport-jwt"
+      ],
+      "goFiles": 3,
+      "lines": 297
+    },
+    {
+      "name": "sessiontoken",
+      "repo": "malcolmston/passport-sessiontoken",
+      "module": "github.com/malcolmston/passport-sessiontoken",
+      "legacyImport": "github.com/malcolmston/passport/strategies/sessiontoken",
+      "submodulePath": "strategies/sessiontoken",
+      "layer": 1,
+      "requires": [
+        "github.com/malcolmston/passport"
+      ],
+      "goFiles": 3,
+      "lines": 246
+    },
+    {
+      "name": "shopify",
+      "repo": "malcolmston/passport-shopify",
+      "module": "github.com/malcolmston/passport-shopify",
+      "legacyImport": "github.com/malcolmston/passport/strategies/shopify",
+      "submodulePath": "strategies/shopify",
+      "layer": 2,
+      "requires": [
+        "github.com/malcolmston/passport",
+        "github.com/malcolmston/passport-oauth2"
+      ],
+      "goFiles": 3,
+      "lines": 147
+    },
+    {
+      "name": "signedtoken",
+      "repo": "malcolmston/passport-signedtoken",
+      "module": "github.com/malcolmston/passport-signedtoken",
+      "legacyImport": "github.com/malcolmston/passport/strategies/signedtoken",
+      "submodulePath": "strategies/signedtoken",
+      "layer": 1,
+      "requires": [
+        "github.com/malcolmston/passport"
+      ],
+      "goFiles": 3,
+      "lines": 315
+    },
+    {
+      "name": "slack",
+      "repo": "malcolmston/passport-slack",
+      "module": "github.com/malcolmston/passport-slack",
+      "legacyImport": "github.com/malcolmston/passport/strategies/slack",
+      "submodulePath": "strategies/slack",
+      "layer": 2,
+      "requires": [
+        "github.com/malcolmston/passport",
+        "github.com/malcolmston/passport-oauth2"
+      ],
+      "goFiles": 3,
+      "lines": 128
+    },
+    {
+      "name": "smartsheet",
+      "repo": "malcolmston/passport-smartsheet",
+      "module": "github.com/malcolmston/passport-smartsheet",
+      "legacyImport": "github.com/malcolmston/passport/strategies/smartsheet",
+      "submodulePath": "strategies/smartsheet",
+      "layer": 2,
+      "requires": [
+        "github.com/malcolmston/passport",
+        "github.com/malcolmston/passport-oauth2"
+      ],
+      "goFiles": 2,
+      "lines": 56
+    },
+    {
+      "name": "snapchat",
+      "repo": "malcolmston/passport-snapchat",
+      "module": "github.com/malcolmston/passport-snapchat",
+      "legacyImport": "github.com/malcolmston/passport/strategies/snapchat",
+      "submodulePath": "strategies/snapchat",
+      "layer": 2,
+      "requires": [
+        "github.com/malcolmston/passport",
+        "github.com/malcolmston/passport-oauth2"
+      ],
+      "goFiles": 2,
+      "lines": 56
+    },
+    {
+      "name": "soundcloud",
+      "repo": "malcolmston/passport-soundcloud",
+      "module": "github.com/malcolmston/passport-soundcloud",
+      "legacyImport": "github.com/malcolmston/passport/strategies/soundcloud",
+      "submodulePath": "strategies/soundcloud",
+      "layer": 2,
+      "requires": [
+        "github.com/malcolmston/passport",
+        "github.com/malcolmston/passport-oauth2"
+      ],
+      "goFiles": 2,
+      "lines": 56
+    },
+    {
+      "name": "spotify",
+      "repo": "malcolmston/passport-spotify",
+      "module": "github.com/malcolmston/passport-spotify",
+      "legacyImport": "github.com/malcolmston/passport/strategies/spotify",
+      "submodulePath": "strategies/spotify",
+      "layer": 2,
+      "requires": [
+        "github.com/malcolmston/passport",
+        "github.com/malcolmston/passport-oauth2"
+      ],
+      "goFiles": 3,
+      "lines": 128
+    },
+    {
+      "name": "square",
+      "repo": "malcolmston/passport-square",
+      "module": "github.com/malcolmston/passport-square",
+      "legacyImport": "github.com/malcolmston/passport/strategies/square",
+      "submodulePath": "strategies/square",
+      "layer": 2,
+      "requires": [
+        "github.com/malcolmston/passport",
+        "github.com/malcolmston/passport-oauth2"
+      ],
+      "goFiles": 3,
+      "lines": 128
+    },
+    {
+      "name": "stackexchange",
+      "repo": "malcolmston/passport-stackexchange",
+      "module": "github.com/malcolmston/passport-stackexchange",
+      "legacyImport": "github.com/malcolmston/passport/strategies/stackexchange",
+      "submodulePath": "strategies/stackexchange",
+      "layer": 2,
+      "requires": [
+        "github.com/malcolmston/passport",
+        "github.com/malcolmston/passport-oauth2"
+      ],
+      "goFiles": 3,
+      "lines": 125
+    },
+    {
+      "name": "strava",
+      "repo": "malcolmston/passport-strava",
+      "module": "github.com/malcolmston/passport-strava",
+      "legacyImport": "github.com/malcolmston/passport/strategies/strava",
+      "submodulePath": "strategies/strava",
+      "layer": 2,
+      "requires": [
+        "github.com/malcolmston/passport",
+        "github.com/malcolmston/passport-oauth2"
+      ],
+      "goFiles": 3,
+      "lines": 128
+    },
+    {
+      "name": "streamlabs",
+      "repo": "malcolmston/passport-streamlabs",
+      "module": "github.com/malcolmston/passport-streamlabs",
+      "legacyImport": "github.com/malcolmston/passport/strategies/streamlabs",
+      "submodulePath": "strategies/streamlabs",
+      "layer": 2,
+      "requires": [
+        "github.com/malcolmston/passport",
+        "github.com/malcolmston/passport-oauth2"
+      ],
+      "goFiles": 2,
+      "lines": 56
+    },
+    {
+      "name": "stripe",
+      "repo": "malcolmston/passport-stripe",
+      "module": "github.com/malcolmston/passport-stripe",
+      "legacyImport": "github.com/malcolmston/passport/strategies/stripe",
+      "submodulePath": "strategies/stripe",
+      "layer": 2,
+      "requires": [
+        "github.com/malcolmston/passport",
+        "github.com/malcolmston/passport-oauth2"
+      ],
+      "goFiles": 3,
+      "lines": 128
+    },
+    {
+      "name": "surveymonkey",
+      "repo": "malcolmston/passport-surveymonkey",
+      "module": "github.com/malcolmston/passport-surveymonkey",
+      "legacyImport": "github.com/malcolmston/passport/strategies/surveymonkey",
+      "submodulePath": "strategies/surveymonkey",
+      "layer": 2,
+      "requires": [
+        "github.com/malcolmston/passport",
+        "github.com/malcolmston/passport-oauth2"
+      ],
+      "goFiles": 2,
+      "lines": 56
+    },
+    {
+      "name": "tiktok",
+      "repo": "malcolmston/passport-tiktok",
+      "module": "github.com/malcolmston/passport-tiktok",
+      "legacyImport": "github.com/malcolmston/passport/strategies/tiktok",
+      "submodulePath": "strategies/tiktok",
+      "layer": 2,
+      "requires": [
+        "github.com/malcolmston/passport",
+        "github.com/malcolmston/passport-oauth2"
+      ],
+      "goFiles": 2,
+      "lines": 56
+    },
+    {
+      "name": "todoist",
+      "repo": "malcolmston/passport-todoist",
+      "module": "github.com/malcolmston/passport-todoist",
+      "legacyImport": "github.com/malcolmston/passport/strategies/todoist",
+      "submodulePath": "strategies/todoist",
+      "layer": 2,
+      "requires": [
+        "github.com/malcolmston/passport",
+        "github.com/malcolmston/passport-oauth2"
+      ],
+      "goFiles": 3,
+      "lines": 126
+    },
+    {
+      "name": "totp",
+      "repo": "malcolmston/passport-totp",
+      "module": "github.com/malcolmston/passport-totp",
+      "legacyImport": "github.com/malcolmston/passport/strategies/totp",
+      "submodulePath": "strategies/totp",
+      "layer": 1,
+      "requires": [
+        "github.com/malcolmston/passport"
+      ],
+      "goFiles": 4,
+      "lines": 441
+    },
+    {
+      "name": "trakt",
+      "repo": "malcolmston/passport-trakt",
+      "module": "github.com/malcolmston/passport-trakt",
+      "legacyImport": "github.com/malcolmston/passport/strategies/trakt",
+      "submodulePath": "strategies/trakt",
+      "layer": 2,
+      "requires": [
+        "github.com/malcolmston/passport",
+        "github.com/malcolmston/passport-oauth2"
+      ],
+      "goFiles": 2,
+      "lines": 56
+    },
+    {
+      "name": "twitch",
+      "repo": "malcolmston/passport-twitch",
+      "module": "github.com/malcolmston/passport-twitch",
+      "legacyImport": "github.com/malcolmston/passport/strategies/twitch",
+      "submodulePath": "strategies/twitch",
+      "layer": 2,
+      "requires": [
+        "github.com/malcolmston/passport",
+        "github.com/malcolmston/passport-oauth2"
+      ],
+      "goFiles": 3,
+      "lines": 128
+    },
+    {
+      "name": "twitter",
+      "repo": "malcolmston/passport-twitter",
+      "module": "github.com/malcolmston/passport-twitter",
+      "legacyImport": "github.com/malcolmston/passport/strategies/twitter",
+      "submodulePath": "strategies/twitter",
+      "layer": 2,
+      "requires": [
+        "github.com/malcolmston/passport",
+        "github.com/malcolmston/passport-oauth2"
+      ],
+      "goFiles": 3,
+      "lines": 128
+    },
+    {
+      "name": "typeform",
+      "repo": "malcolmston/passport-typeform",
+      "module": "github.com/malcolmston/passport-typeform",
+      "legacyImport": "github.com/malcolmston/passport/strategies/typeform",
+      "submodulePath": "strategies/typeform",
+      "layer": 2,
+      "requires": [
+        "github.com/malcolmston/passport",
+        "github.com/malcolmston/passport-oauth2"
+      ],
+      "goFiles": 2,
+      "lines": 56
+    },
+    {
+      "name": "uber",
+      "repo": "malcolmston/passport-uber",
+      "module": "github.com/malcolmston/passport-uber",
+      "legacyImport": "github.com/malcolmston/passport/strategies/uber",
+      "submodulePath": "strategies/uber",
+      "layer": 2,
+      "requires": [
+        "github.com/malcolmston/passport",
+        "github.com/malcolmston/passport-oauth2"
+      ],
+      "goFiles": 2,
+      "lines": 56
+    },
+    {
+      "name": "unsplash",
+      "repo": "malcolmston/passport-unsplash",
+      "module": "github.com/malcolmston/passport-unsplash",
+      "legacyImport": "github.com/malcolmston/passport/strategies/unsplash",
+      "submodulePath": "strategies/unsplash",
+      "layer": 2,
+      "requires": [
+        "github.com/malcolmston/passport",
+        "github.com/malcolmston/passport-oauth2"
+      ],
+      "goFiles": 2,
+      "lines": 56
+    },
+    {
+      "name": "vimeo",
+      "repo": "malcolmston/passport-vimeo",
+      "module": "github.com/malcolmston/passport-vimeo",
+      "legacyImport": "github.com/malcolmston/passport/strategies/vimeo",
+      "submodulePath": "strategies/vimeo",
+      "layer": 2,
+      "requires": [
+        "github.com/malcolmston/passport",
+        "github.com/malcolmston/passport-oauth2"
+      ],
+      "goFiles": 2,
+      "lines": 56
+    },
+    {
+      "name": "vk",
+      "repo": "malcolmston/passport-vk",
+      "module": "github.com/malcolmston/passport-vk",
+      "legacyImport": "github.com/malcolmston/passport/strategies/vk",
+      "submodulePath": "strategies/vk",
+      "layer": 2,
+      "requires": [
+        "github.com/malcolmston/passport",
+        "github.com/malcolmston/passport-oauth2"
+      ],
+      "goFiles": 3,
+      "lines": 128
+    },
+    {
+      "name": "wakatime",
+      "repo": "malcolmston/passport-wakatime",
+      "module": "github.com/malcolmston/passport-wakatime",
+      "legacyImport": "github.com/malcolmston/passport/strategies/wakatime",
+      "submodulePath": "strategies/wakatime",
+      "layer": 2,
+      "requires": [
+        "github.com/malcolmston/passport",
+        "github.com/malcolmston/passport-oauth2"
+      ],
+      "goFiles": 2,
+      "lines": 56
+    },
+    {
+      "name": "webauthn",
+      "repo": "malcolmston/passport-webauthn",
+      "module": "github.com/malcolmston/passport-webauthn",
+      "legacyImport": "github.com/malcolmston/passport/strategies/webauthn",
+      "submodulePath": "strategies/webauthn",
+      "layer": 1,
+      "requires": [
+        "github.com/malcolmston/passport"
+      ],
+      "goFiles": 6,
+      "lines": 1669
+    },
+    {
+      "name": "webex",
+      "repo": "malcolmston/passport-webex",
+      "module": "github.com/malcolmston/passport-webex",
+      "legacyImport": "github.com/malcolmston/passport/strategies/webex",
+      "submodulePath": "strategies/webex",
+      "layer": 2,
+      "requires": [
+        "github.com/malcolmston/passport",
+        "github.com/malcolmston/passport-oauth2"
+      ],
+      "goFiles": 2,
+      "lines": 56
+    },
+    {
+      "name": "webflow",
+      "repo": "malcolmston/passport-webflow",
+      "module": "github.com/malcolmston/passport-webflow",
+      "legacyImport": "github.com/malcolmston/passport/strategies/webflow",
+      "submodulePath": "strategies/webflow",
+      "layer": 2,
+      "requires": [
+        "github.com/malcolmston/passport",
+        "github.com/malcolmston/passport-oauth2"
+      ],
+      "goFiles": 2,
+      "lines": 56
+    },
+    {
+      "name": "wechat",
+      "repo": "malcolmston/passport-wechat",
+      "module": "github.com/malcolmston/passport-wechat",
+      "legacyImport": "github.com/malcolmston/passport/strategies/wechat",
+      "submodulePath": "strategies/wechat",
+      "layer": 2,
+      "requires": [
+        "github.com/malcolmston/passport",
+        "github.com/malcolmston/passport-oauth2"
+      ],
+      "goFiles": 2,
+      "lines": 56
+    },
+    {
+      "name": "weibo",
+      "repo": "malcolmston/passport-weibo",
+      "module": "github.com/malcolmston/passport-weibo",
+      "legacyImport": "github.com/malcolmston/passport/strategies/weibo",
+      "submodulePath": "strategies/weibo",
+      "layer": 2,
+      "requires": [
+        "github.com/malcolmston/passport",
+        "github.com/malcolmston/passport-oauth2"
+      ],
+      "goFiles": 2,
+      "lines": 56
+    },
+    {
+      "name": "whoop",
+      "repo": "malcolmston/passport-whoop",
+      "module": "github.com/malcolmston/passport-whoop",
+      "legacyImport": "github.com/malcolmston/passport/strategies/whoop",
+      "submodulePath": "strategies/whoop",
+      "layer": 2,
+      "requires": [
+        "github.com/malcolmston/passport",
+        "github.com/malcolmston/passport-oauth2"
+      ],
+      "goFiles": 2,
+      "lines": 56
+    },
+    {
+      "name": "wordpresscom",
+      "repo": "malcolmston/passport-wordpresscom",
+      "module": "github.com/malcolmston/passport-wordpresscom",
+      "legacyImport": "github.com/malcolmston/passport/strategies/wordpresscom",
+      "submodulePath": "strategies/wordpresscom",
+      "layer": 2,
+      "requires": [
+        "github.com/malcolmston/passport",
+        "github.com/malcolmston/passport-oauth2"
+      ],
+      "goFiles": 3,
+      "lines": 126
+    },
+    {
+      "name": "workos",
+      "repo": "malcolmston/passport-workos",
+      "module": "github.com/malcolmston/passport-workos",
+      "legacyImport": "github.com/malcolmston/passport/strategies/workos",
+      "submodulePath": "strategies/workos",
+      "layer": 2,
+      "requires": [
+        "github.com/malcolmston/passport",
+        "github.com/malcolmston/passport-oauth2"
+      ],
+      "goFiles": 3,
+      "lines": 125
+    },
+    {
+      "name": "xero",
+      "repo": "malcolmston/passport-xero",
+      "module": "github.com/malcolmston/passport-xero",
+      "legacyImport": "github.com/malcolmston/passport/strategies/xero",
+      "submodulePath": "strategies/xero",
+      "layer": 2,
+      "requires": [
+        "github.com/malcolmston/passport",
+        "github.com/malcolmston/passport-oauth2"
+      ],
+      "goFiles": 2,
+      "lines": 56
+    },
+    {
+      "name": "yahoo",
+      "repo": "malcolmston/passport-yahoo",
+      "module": "github.com/malcolmston/passport-yahoo",
+      "legacyImport": "github.com/malcolmston/passport/strategies/yahoo",
+      "submodulePath": "strategies/yahoo",
+      "layer": 2,
+      "requires": [
+        "github.com/malcolmston/passport",
+        "github.com/malcolmston/passport-oauth2"
+      ],
+      "goFiles": 2,
+      "lines": 56
+    },
+    {
+      "name": "yandex",
+      "repo": "malcolmston/passport-yandex",
+      "module": "github.com/malcolmston/passport-yandex",
+      "legacyImport": "github.com/malcolmston/passport/strategies/yandex",
+      "submodulePath": "strategies/yandex",
+      "layer": 2,
+      "requires": [
+        "github.com/malcolmston/passport",
+        "github.com/malcolmston/passport-oauth2"
+      ],
+      "goFiles": 3,
+      "lines": 128
+    },
+    {
+      "name": "zendesk",
+      "repo": "malcolmston/passport-zendesk",
+      "module": "github.com/malcolmston/passport-zendesk",
+      "legacyImport": "github.com/malcolmston/passport/strategies/zendesk",
+      "submodulePath": "strategies/zendesk",
+      "layer": 2,
+      "requires": [
+        "github.com/malcolmston/passport",
+        "github.com/malcolmston/passport-oauth2"
+      ],
+      "goFiles": 3,
+      "lines": 137
+    },
+    {
+      "name": "zoho",
+      "repo": "malcolmston/passport-zoho",
+      "module": "github.com/malcolmston/passport-zoho",
+      "legacyImport": "github.com/malcolmston/passport/strategies/zoho",
+      "submodulePath": "strategies/zoho",
+      "layer": 2,
+      "requires": [
+        "github.com/malcolmston/passport",
+        "github.com/malcolmston/passport-oauth2"
+      ],
+      "goFiles": 2,
+      "lines": 56
+    },
+    {
+      "name": "zoom",
+      "repo": "malcolmston/passport-zoom",
+      "module": "github.com/malcolmston/passport-zoom",
+      "legacyImport": "github.com/malcolmston/passport/strategies/zoom",
+      "submodulePath": "strategies/zoom",
+      "layer": 2,
+      "requires": [
+        "github.com/malcolmston/passport",
+        "github.com/malcolmston/passport-oauth2"
+      ],
+      "goFiles": 3,
+      "lines": 128
+    }
+  ]
+}
